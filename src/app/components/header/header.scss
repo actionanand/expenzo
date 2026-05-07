@@ -23,3 +23,24 @@
   align-items: center;
   gap: 0.5rem;
 }
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  text-decoration: none;
+  font-size: 1rem;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: var(--color-surface-variant);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+}

@@ -8,4 +8,7 @@ export const environment = {
   token: 'MY_SECRET_KEY',
   defaultCycleStartDay: 25,
   apiUrl: buildApiUrl(scriptKey),
+  googleSheetId: '1HjiojQtfHcyWtFqNzHttgCO36EK7s5eEoQQl9_jxxUw',
+  wishlistSheetGid: '1994871759',
+  passwordHash: 'cbfdac6008f9cab4083784cbd1874f76618d2a97', // default password is password123
 };

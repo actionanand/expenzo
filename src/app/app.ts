@@ -3,11 +3,12 @@ import { RouterOutlet } from '@angular/router';
 import { Store } from '@ngrx/store';
 
 import { initTheme } from './store/theme/theme.actions';
+import { AuthGate } from './components/auth-gate/auth-gate';
 
 @Component({
   selector: 'app-root',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterOutlet],
+  imports: [RouterOutlet, AuthGate],
   templateUrl: './app.html',
   styleUrl: './app.scss',
 })

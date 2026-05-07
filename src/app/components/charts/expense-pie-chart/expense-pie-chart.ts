@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, input, computed, signal } from '@angular/core';
+import { Component, ChangeDetectionStrategy, input, computed, signal, effect } from '@angular/core';
 import { BaseChartDirective } from 'ng2-charts';
 import { ChartConfiguration } from 'chart.js';
 
@@ -41,6 +41,16 @@ export class ExpensePieChart {
   readonly allCycles = input.required<CycleData[]>();
 
   protected readonly selectedPieIndex = signal(0);
+
+  constructor() {
+    // Default to latest month when cycles load
+    effect(() => {
+      const all = this.allCycles();
+      if (all.length > 0) {
+        this.selectedPieIndex.set(all.length - 1);
+      }
+    });
+  }
 
   private readonly COLORS = [
     '#4caf50',
