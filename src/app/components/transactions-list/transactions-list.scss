@@ -1,0 +1,69 @@
+.transactions-section {
+  padding: 0 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.transactions-list {
+  display: flex;
+  flex-direction: column;
+  background: var(--color-surface);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.transaction-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--color-border);
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.tx-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.tx-name {
+  font-weight: 500;
+  font-size: 0.875rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tx-meta {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.tx-category {
+  font-size: 0.675rem;
+  font-weight: 500;
+  color: var(--color-primary);
+  background: var(--color-primary-surface);
+  padding: 0.1rem 0.4rem;
+  border-radius: var(--radius-xs);
+}
+
+.tx-date {
+  font-size: 0.7rem;
+  color: var(--color-text-secondary);
+}
+
+.tx-amount {
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--color-text);
+  white-space: nowrap;
+  margin-left: 0.75rem;
+}

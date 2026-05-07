@@ -1,0 +1,57 @@
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+  padding: 1rem;
+}
+
+.summary-card {
+  background: var(--color-surface);
+  border-radius: var(--radius-sm);
+  padding: 1rem;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  border-left: 4px solid var(--color-border);
+
+  &.income {
+    border-left-color: var(--color-income);
+  }
+
+  &.expense {
+    border-left-color: var(--color-danger);
+  }
+
+  &.savings {
+    border-left-color: var(--color-success);
+  }
+
+  &.over-budget {
+    border-left-color: var(--color-warning);
+  }
+
+  &.shortage {
+    border-left-color: var(--color-danger);
+  }
+}
+
+.card-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.card-value {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+@media (min-width: 768px) {
+  .summary-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}

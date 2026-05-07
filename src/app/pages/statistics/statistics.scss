@@ -1,0 +1,12 @@
+.statistics-content {
+  padding-top: 0.5rem;
+  padding-bottom: 2rem;
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+@media (min-width: 768px) {
+  .statistics-content {
+    max-width: 960px;
+  }
+}
