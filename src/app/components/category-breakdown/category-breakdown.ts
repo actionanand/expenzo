@@ -1,19 +1,24 @@
-import { Component, ChangeDetectionStrategy, input } from '@angular/core';
-import { CurrencyPipe } from '@angular/common';
+import { Component, ChangeDetectionStrategy, input, signal } from '@angular/core';
+import { CurrencyPipe, DatePipe } from '@angular/common';
 
-import { CategorySummary } from '../../models/expense.model';
+import { CategorySummary, Transaction } from '../../models/expense.model';
 
 @Component({
   selector: 'app-category-breakdown',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CurrencyPipe],
+  imports: [CurrencyPipe, DatePipe],
   template: `
     <section class="category-section">
       <h2 class="section-title">Category Breakdown</h2>
       <div class="category-list">
         @for (cat of categories(); track cat.category) {
           <div class="category-card" [class.over-limit]="cat.overLimit">
-            <div class="category-header">
+            <button
+              class="category-header"
+              type="button"
+              [attr.aria-expanded]="expandedCategory() === cat.category"
+              (click)="toggleCategory(cat.category)"
+            >
               <span class="category-name">{{ cat.category }}</span>
               <span class="category-amount">
                 {{ cat.spent | currency: 'INR' : 'symbol-narrow' : '1.0-0' }}
@@ -23,7 +28,7 @@ import { CategorySummary } from '../../models/expense.model';
                   </span>
                 }
               </span>
-            </div>
+            </button>
             @if (cat.limit > 0) {
               <div
                 class="progress-bar"
@@ -43,6 +48,23 @@ import { CategorySummary } from '../../models/expense.model';
                 }}
               </span>
             }
+            @if (expandedCategory() === cat.category) {
+              <div class="category-transactions">
+                @for (tx of getTransactionsForCategory(cat.category); track tx.sno) {
+                  <div class="cat-tx-item">
+                    <div class="cat-tx-info">
+                      <span class="cat-tx-name">{{ tx.name }}</span>
+                      <span class="cat-tx-date">{{ tx.date | date: 'dd MMM' }}</span>
+                    </div>
+                    <span class="cat-tx-price">{{
+                      tx.price | currency: 'INR' : 'symbol-narrow' : '1.0-0'
+                    }}</span>
+                  </div>
+                } @empty {
+                  <p class="cat-tx-empty">No transactions</p>
+                }
+              </div>
+            }
           </div>
         }
       </div>
@@ -52,6 +74,17 @@ import { CategorySummary } from '../../models/expense.model';
 })
 export class CategoryBreakdown {
   readonly categories = input.required<CategorySummary[]>();
+  readonly transactions = input.required<Transaction[]>();
+
+  protected readonly expandedCategory = signal<string | null>(null);
+
+  protected toggleCategory(category: string): void {
+    this.expandedCategory.update((current) => (current === category ? null : category));
+  }
+
+  protected getTransactionsForCategory(category: string): Transaction[] {
+    return this.transactions().filter((tx) => tx.category === category);
+  }
 
   protected getProgress(cat: CategorySummary): number {
     if (cat.limit === 0) return 0;

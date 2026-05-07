@@ -26,7 +26,7 @@ import { Summary } from '../../models/expense.model';
         [class.savings]="!summary().isOverBudget"
         [class.over-budget]="summary().isOverBudget"
       >
-        <span class="card-label">Savings</span>
+        <span class="card-label">{{ isLatest() ? 'Balance' : 'Savings' }}</span>
         <span class="card-value">{{
           summary().savings | currency: 'INR' : 'symbol-narrow' : '1.0-0'
         }}</span>
@@ -45,4 +45,5 @@ import { Summary } from '../../models/expense.model';
 })
 export class SummaryCards {
   readonly summary = input.required<Summary>();
+  readonly isLatest = input(false);
 }

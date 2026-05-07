@@ -96,8 +96,11 @@ type ViewTab = 'month' | 'stats';
               {{ cycle.cycleTo | date: 'dd MMM yyyy' }}
               <span class="tx-count">({{ cycle.transactionCount }} entries)</span>
             </p>
-            <app-summary-cards [summary]="cycle.summary" />
-            <app-category-breakdown [categories]="cycle.categorySummary" />
+            <app-summary-cards [summary]="cycle.summary" [isLatest]="isLatestCycle()" />
+            <app-category-breakdown
+              [categories]="cycle.categorySummary"
+              [transactions]="cycle.transactions"
+            />
             <app-income-summary [incomeSources]="cycle.incomeSources" />
             <app-transactions-list [transactions]="cycle.transactions" />
           }
@@ -119,6 +122,12 @@ export class Dashboard implements OnInit {
   protected readonly cycleStartDay = signal(environment.defaultCycleStartDay);
   protected readonly activeTab = signal<ViewTab>('month');
   protected readonly selectedCycleIndex = signal(0);
+
+  protected readonly isLatestCycle = computed(() => {
+    const all = this.cycles();
+    const idx = this.selectedCycleIndex();
+    return idx === all.length - 1;
+  });
 
   protected readonly cycleLabels = computed(() => this.cycles().map((c) => c.label));
 
