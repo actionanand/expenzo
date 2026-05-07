@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, input, computed } from '@angular/core';
+import { Component, ChangeDetectionStrategy, input, computed, signal } from '@angular/core';
 import { CurrencyPipe, DatePipe } from '@angular/common';
 
 import { Transaction } from '../../models/expense.model';
@@ -11,7 +11,7 @@ import { Transaction } from '../../models/expense.model';
     <section class="transactions-section">
       <h2 class="section-title">Recent Transactions</h2>
       <div class="transactions-list">
-        @for (tx of sortedTransactions(); track tx.sno) {
+        @for (tx of visibleTransactions(); track tx.sno) {
           <div class="transaction-item">
             <div class="tx-info">
               <span class="tx-name">{{ tx.name }}</span>
@@ -26,6 +26,11 @@ import { Transaction } from '../../models/expense.model';
           </div>
         }
       </div>
+      @if (hasMore()) {
+        <button class="load-more-btn" type="button" (click)="loadMore()">
+          Show more ({{ remainingCount() }} left)
+        </button>
+      }
     </section>
   `,
   styleUrl: './transactions-list.scss',
@@ -33,9 +38,28 @@ import { Transaction } from '../../models/expense.model';
 export class TransactionsList {
   readonly transactions = input.required<Transaction[]>();
 
+  private readonly PAGE_SIZE = 15;
+  protected readonly visibleCount = signal(this.PAGE_SIZE);
+
   protected readonly sortedTransactions = computed(() =>
     [...this.transactions()].sort(
       (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
     ),
   );
+
+  protected readonly visibleTransactions = computed(() =>
+    this.sortedTransactions().slice(0, this.visibleCount()),
+  );
+
+  protected readonly hasMore = computed(
+    () => this.visibleCount() < this.sortedTransactions().length,
+  );
+
+  protected readonly remainingCount = computed(
+    () => this.sortedTransactions().length - this.visibleCount(),
+  );
+
+  protected loadMore(): void {
+    this.visibleCount.update((c) => c + this.PAGE_SIZE);
+  }
 }

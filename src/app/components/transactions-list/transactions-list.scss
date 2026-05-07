@@ -67,3 +67,27 @@
   white-space: nowrap;
   margin-left: 0.75rem;
 }
+
+.load-more-btn {
+  display: block;
+  width: 100%;
+  padding: 0.625rem;
+  margin-top: 0.5rem;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-variant);
+  color: var(--color-primary);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover {
+    background: var(--color-primary-surface);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+}

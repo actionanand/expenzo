@@ -17,6 +17,10 @@ import { TransactionsList } from '../../components/transactions-list/transaction
 import { IncomeSummary } from '../../components/income-summary/income-summary';
 import { MonthNavigator } from '../../components/month-navigator/month-navigator';
 import { Statistics } from '../statistics/statistics';
+import { PullToRefresh } from '../../components/pull-to-refresh/pull-to-refresh';
+import { DailyAverage } from '../../components/daily-average/daily-average';
+import { BudgetGauge } from '../../components/budget-gauge/budget-gauge';
+import { ExportData } from '../../components/export-data/export-data';
 import { transformToCycles } from '../../utils/cycle-transformer';
 import { environment } from '../../../environments/environment';
 
@@ -34,9 +38,14 @@ type ViewTab = 'month' | 'stats';
     IncomeSummary,
     MonthNavigator,
     Statistics,
+    PullToRefresh,
+    DailyAverage,
+    BudgetGauge,
+    ExportData,
   ],
   template: `
     <app-header [cycleStartDay]="cycleStartDay()" (cycleChange)="onCycleChange($event)" />
+    <app-pull-to-refresh (refresh)="loadData()" />
 
     @if (loading()) {
       <div class="loading">
@@ -97,12 +106,17 @@ type ViewTab = 'month' | 'stats';
               <span class="tx-count">({{ cycle.transactionCount }} entries)</span>
             </p>
             <app-summary-cards [summary]="cycle.summary" [isLatest]="isLatestCycle()" />
+            @if (isLatestCycle()) {
+              <app-daily-average [cycle]="cycle" />
+              <app-budget-gauge [cycle]="cycle" />
+            }
             <app-category-breakdown
               [categories]="cycle.categorySummary"
               [transactions]="cycle.transactions"
             />
             <app-income-summary [incomeSources]="cycle.incomeSources" />
             <app-transactions-list [transactions]="cycle.transactions" />
+            <app-export-data [cycle]="cycle" />
           }
         } @else {
           <app-statistics [cycles]="cycles()" />
@@ -150,7 +164,7 @@ export class Dashboard implements OnInit {
     this.loadData();
   }
 
-  private loadData(): void {
+  protected loadData(): void {
     this.loading.set(true);
     this.error.set(null);
     this.expenseService.getExpenses(this.cycleStartDay()).subscribe({

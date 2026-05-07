@@ -43,9 +43,7 @@ interface RangeOption {
       </div>
 
       @if (selectedRange() === 'current') {
-        @if (currentCycle(); as current) {
-          <app-expense-pie-chart [cycle]="current" />
-        }
+        <app-expense-pie-chart [allCycles]="cycles()" />
       } @else {
         @if (filteredCycles().length > 0) {
           <app-overview-stats [allMonths]="filteredCycles()" />

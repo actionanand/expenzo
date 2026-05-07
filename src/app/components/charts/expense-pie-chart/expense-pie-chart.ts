@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, input, computed } from '@angular/core';
+import { Component, ChangeDetectionStrategy, input, computed, signal } from '@angular/core';
 import { BaseChartDirective } from 'ng2-charts';
 import { ChartConfiguration } from 'chart.js';
 
@@ -11,6 +11,19 @@ import { CycleData } from '../../../models/expense.model';
   template: `
     <section class="chart-section">
       <h2 class="section-title">Expense by Category</h2>
+      @if (allCycles().length > 1) {
+        <div class="pie-month-selector">
+          @for (c of allCycles(); track c.label; let i = $index) {
+            <button
+              type="button"
+              [class.active]="selectedPieIndex() === i"
+              (click)="selectedPieIndex.set(i)"
+            >
+              {{ c.label }}
+            </button>
+          }
+        </div>
+      }
       <div class="chart-wrap">
         <canvas
           baseChart
@@ -25,7 +38,9 @@ import { CycleData } from '../../../models/expense.model';
   styleUrl: './expense-pie-chart.scss',
 })
 export class ExpensePieChart {
-  readonly cycle = input.required<CycleData>();
+  readonly allCycles = input.required<CycleData[]>();
+
+  protected readonly selectedPieIndex = signal(0);
 
   private readonly COLORS = [
     '#4caf50',
@@ -40,8 +55,14 @@ export class ExpensePieChart {
     '#8bc34a',
   ];
 
+  private readonly activeCycle = computed(() => {
+    const all = this.allCycles();
+    const idx = this.selectedPieIndex();
+    return all[idx] ?? all[all.length - 1];
+  });
+
   protected readonly chartData = computed<ChartConfiguration<'doughnut'>['data']>(() => {
-    const cats = this.cycle().categorySummary.filter((c) => c.spent > 0);
+    const cats = this.activeCycle().categorySummary.filter((c) => c.spent > 0);
     return {
       labels: cats.map((c) => c.category),
       datasets: [
