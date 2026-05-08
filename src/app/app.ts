@@ -1,12 +1,21 @@
-import { Component, signal } from '@angular/core';
+import { Component, ChangeDetectionStrategy, OnInit, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { Store } from '@ngrx/store';
+
+import { initTheme } from './store/theme/theme.actions';
+import { AuthGate } from './components/auth-gate/auth-gate';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [RouterOutlet, AuthGate],
   templateUrl: './app.html',
   styleUrl: './app.scss',
 })
-export class App {
-  protected readonly title = signal('expenzo');
+export class App implements OnInit {
+  private readonly store = inject(Store);
+
+  ngOnInit(): void {
+    this.store.dispatch(initTheme());
+  }
 }

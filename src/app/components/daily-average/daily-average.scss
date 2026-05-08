@@ -1,0 +1,64 @@
+.daily-avg-section {
+  padding: 0 1rem;
+  margin-bottom: 1rem;
+}
+
+.daily-avg-card {
+  background: var(--color-surface);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-sm);
+  padding: 0.875rem 1rem;
+}
+
+.daily-avg-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.625rem;
+}
+
+.daily-avg-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.daily-avg-value {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.daily-avg-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.avg-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.avg-key {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+}
+
+.avg-val {
+  font-size: 0.75rem;
+  font-weight: 600;
+
+  &.ideal {
+    color: var(--color-income);
+  }
+
+  &.on-pace {
+    color: var(--color-success);
+  }
+
+  &.over-pace {
+    color: var(--color-danger);
+  }
+}
