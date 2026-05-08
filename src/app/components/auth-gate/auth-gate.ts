@@ -7,7 +7,7 @@ import { AuthService } from '../../services/auth.service';
   selector: 'app-auth-gate',
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    @if (!authService.isAuthenticated()) {
+    @if (authService.redirectUrl()) {
       <div class="auth-overlay">
         <div class="auth-card" [class.wobble]="wobble()" (animationend)="wobble.set(false)">
           <div class="auth-icon">🔒</div>
@@ -116,8 +116,8 @@ export class AuthGate {
     if (success) {
       this.successMsg.set('Access granted!');
       this.loading.set(false);
-      const targetUrl = this.authService.redirectUrl;
-      this.authService.redirectUrl = null;
+      const targetUrl = this.authService.redirectUrl();
+      this.authService.redirectUrl.set(null);
       if (targetUrl) {
         this.router.navigateByUrl(targetUrl);
       }

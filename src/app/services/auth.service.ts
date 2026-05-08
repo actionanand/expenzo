@@ -8,7 +8,7 @@ export class AuthService {
 
   readonly isAuthenticated = signal(this.checkStoredAuth());
 
-  redirectUrl: string | null = null;
+  readonly redirectUrl = signal<string | null>(null);
 
   async login(password: string): Promise<boolean> {
     const hash = await this.sha1(password);
