@@ -5,10 +5,10 @@ const buildApiUrl = (key: string) => `https://script.google.com/macros/s/${key}/
 export const environment = {
   production: true,
   scriptKey,
-  token: 'MY_SECRET_KEY',
+  token: 'TOKEN_PLACEHOLDER', // To be replaced during build with actual token
   defaultCycleStartDay: 25,
   apiUrl: buildApiUrl(scriptKey),
   googleSheetId: '1HjiojQtfHcyWtFqNzHttgCO36EK7s5eEoQQl9_jxxUw',
   wishlistSheetGid: '1994871759',
-  passwordHash: 'cbfdac6008f9cab4083784cbd1874f76618d2a97',
+  passwordHash: 'PASSWORD_HASH_PLACEHOLDER', // To be replaced during build with actual hash
 };
