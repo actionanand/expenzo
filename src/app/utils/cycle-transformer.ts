@@ -92,7 +92,7 @@ function recalculateSummary(transactions: Transaction[], incomeSources: IncomeSo
  * When cycleStartDay=1 (or dev mode), maps each API month directly to a CycleData.
  */
 function mapDirectly(months: MonthData[]): CycleData[] {
-  return months.map((m) => {
+  const cycles = months.map((m) => {
     const parsed = parseMonthLabel(m.month);
     const from = new Date(parsed.year, parsed.month, 1);
     const lastDay = new Date(parsed.year, parsed.month + 1, 0).getDate();
@@ -109,6 +109,10 @@ function mapDirectly(months: MonthData[]): CycleData[] {
       transactions: m.transactions,
     };
   });
+
+  cycles.sort((a, b) => a.cycleFrom.getTime() - b.cycleFrom.getTime());
+
+  return cycles;
 }
 
 /**
@@ -181,6 +185,8 @@ function sliceIntoCycles(
       transactions: txns,
     });
   }
+
+  cycles.sort((a, b) => a.cycleFrom.getTime() - b.cycleFrom.getTime());
 
   return cycles;
 }
