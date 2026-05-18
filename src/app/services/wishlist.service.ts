@@ -47,10 +47,10 @@ export class WishlistService {
       const cells = row.c;
       const snoCell = cells[0];
 
-      // Only consider rows where S No is present
-      if (!snoCell || snoCell.v == null) continue;
+      // Only consider rows where S No is an actual number (skips header row and empty rows)
+      if (!snoCell || typeof snoCell.v !== 'number') continue;
 
-      const sno = Number(snoCell.v);
+      const sno = snoCell.v;
       const name = (cells[1]?.v as string) ?? '';
       const quantityCell = cells[2];
       // Use formatted value (handles fractions like "1/2"), fall back to raw numeric, or null
