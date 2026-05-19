@@ -1,10 +1,10 @@
 import { inject, Injectable } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { Store } from '@ngrx/store';
-import { map, tap, withLatestFrom } from 'rxjs';
+import { first, map, tap, withLatestFrom } from 'rxjs';
 
-import * as ThemeActions from './theme.actions';
-import { selectIsDark } from './theme.selectors';
+import { initTheme, setThemeMode, ThemeMode } from './theme.actions';
+import { selectIsDark, selectThemeMode } from './theme.selectors';
 
 @Injectable()
 export class ThemeEffects {
@@ -14,11 +14,11 @@ export class ThemeEffects {
   readonly applyTheme$ = createEffect(
     () =>
       this.actions$.pipe(
-        ofType(ThemeActions.toggleTheme, ThemeActions.setDarkTheme, ThemeActions.setLightTheme),
+        ofType(setThemeMode),
         withLatestFrom(this.store.select(selectIsDark)),
-        tap(([, isDark]) => {
+        tap(([{ mode }, isDark]) => {
           document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
-          localStorage.setItem('expenzo-theme', isDark ? 'dark' : 'light');
+          localStorage.setItem('expenzo-theme', mode);
         }),
       ),
     { dispatch: false },
@@ -26,14 +26,36 @@ export class ThemeEffects {
 
   readonly initTheme$ = createEffect(() =>
     this.actions$.pipe(
-      ofType(ThemeActions.initTheme),
+      ofType(initTheme),
       map(() => {
-        const saved = localStorage.getItem('expenzo-theme');
-        if (saved === 'dark') {
-          return ThemeActions.setDarkTheme();
-        }
-        return ThemeActions.setLightTheme();
+        const saved = localStorage.getItem('expenzo-theme') as ThemeMode | null;
+        const mode: ThemeMode = saved === 'light' || saved === 'dark' ? saved : 'auto';
+
+        // Apply immediately
+        const isDark =
+          mode === 'auto'
+            ? window.matchMedia('(prefers-color-scheme: dark)').matches
+            : mode === 'dark';
+        document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+
+        // Listen for system theme changes (for auto mode)
+        this.listenSystemTheme();
+
+        return setThemeMode({ mode });
       }),
     ),
   );
+
+  private listenSystemTheme(): void {
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+      this.store
+        .select(selectThemeMode)
+        .pipe(first())
+        .subscribe((mode) => {
+          if (mode === 'auto') {
+            document.documentElement.setAttribute('data-theme', e.matches ? 'dark' : 'light');
+          }
+        });
+    });
+  }
 }

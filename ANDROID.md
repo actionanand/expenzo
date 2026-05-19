@@ -192,7 +192,15 @@ Versions are stored in `android-version.json` at the repo root:
 - **versionCode** — integer, must increase with every Play Store upload.
 - **versionName** — human-readable string shown in device app info.
 
-The CI workflow **automatically increments `versionCode` on every build** and commits the updated file back to `main-android` before building.
+### How versionCode works
+
+The CI workflow **auto-increments `versionCode` by 1 on every build** and commits the updated file back to `main-android`. This means:
+
+- On the `main` branch, `versionCode` stays at its initial value (e.g. `1`) — this is **normal**. The `main` branch doesn't build APKs.
+- On `main-android`, the value increases with every push (1 → 2 → 3 → ...).
+- If you **manually edit** `versionCode` in `android-version.json` on `main-android`, CI will increment from your new value on the next build.
+- You should **never need to edit versionCode manually** — CI handles it.
+- Only edit `versionName` when you want to mark a release (e.g. `1.0.0` → `1.1.0`).
 
 ### Auto-increment (npm scripts)
 
