@@ -10,25 +10,23 @@ import { CycleData, Transaction } from '../../models/expense.model';
       <div class="export-card">
         <h3 class="export-title">Export Data</h3>
         <div class="export-actions">
-          <button
-            type="button"
-            class="export-btn csv"
-            [disabled]="exporting()"
-            (click)="exportCSV()"
-          >
+          <button type="button" class="export-btn csv" [disabled]="busy()" (click)="onExportCSV()">
             <span class="export-icon">📊</span>
-            {{ exporting() ? 'Sharing...' : 'Export CSV' }}
+            Export CSV
           </button>
           <button
             type="button"
             class="export-btn pdf"
-            [disabled]="exporting()"
-            (click)="exportReport()"
+            [disabled]="busy()"
+            (click)="onExportReport()"
           >
             <span class="export-icon">📄</span>
-            {{ exporting() ? 'Sharing...' : 'Export Report' }}
+            Export Report
           </button>
         </div>
+        @if (toast()) {
+          <p class="export-toast" [class.error]="toastError()" role="status">{{ toast() }}</p>
+        }
       </div>
     </section>
   `,
@@ -36,69 +34,109 @@ import { CycleData, Transaction } from '../../models/expense.model';
 })
 export class ExportData {
   readonly cycle = input.required<CycleData>();
-  protected readonly exporting = signal(false);
 
-  protected async exportCSV(): Promise<void> {
-    this.exporting.set(true);
-    try {
-      const csv = this.buildCSV();
-      const filename = `expenses-${this.cycle().label}.csv`;
-      // BOM prefix so Excel correctly reads UTF-8
-      const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' });
+  protected readonly busy = signal(false);
+  protected readonly toast = signal('');
+  protected readonly toastError = signal(false);
 
-      if (this.isNativeApp()) {
-        await this.shareFile(blob, filename);
-      } else {
-        this.downloadBlob(blob, filename);
-      }
-    } finally {
-      this.exporting.set(false);
-    }
+  /**
+   * Export CSV — share on Android, download on desktop.
+   * Uses .then()/.catch() (not async/await) to guarantee the
+   * browser's "user activation" flag is still valid when
+   * navigator.share() is called.
+   */
+  protected onExportCSV(): void {
+    this.busy.set(true);
+    this.clearToast();
+
+    const csv = this.buildCSV();
+    const filename = `expenses-${this.cycle().label}.csv`;
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' });
+
+    this.tryShareFile(blob, filename)
+      .then((shared) => {
+        if (shared) return;
+        // Desktop fallback — blob download
+        this.triggerDownload(blob, filename);
+      })
+      .catch(() => {
+        // Both share and download failed (Android WebView) — clipboard fallback
+        return navigator.clipboard.writeText(csv).then(
+          () => this.showToast('📋 CSV copied to clipboard'),
+          () => this.showToast('❌ Export failed', true),
+        );
+      })
+      .finally(() => this.busy.set(false));
   }
 
-  protected async exportReport(): Promise<void> {
-    this.exporting.set(true);
-    try {
-      const html = this.buildReportHTML();
+  /**
+   * Export expense report — share on Android, print on desktop.
+   */
+  protected onExportReport(): void {
+    this.busy.set(true);
+    this.clearToast();
 
-      if (this.isNativeApp()) {
-        // Android: share as HTML file → user can open, print, or save as PDF
-        const filename = `expenses-${this.cycle().label}.html`;
-        const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
-        await this.shareFile(blob, filename);
-      } else {
-        // Desktop: iframe print (triggers browser print / save-as-PDF dialog)
+    const html = this.buildReportHTML();
+    const filename = `expenzo-report-${this.cycle().label}.html`;
+    const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+
+    this.tryShareFile(blob, filename)
+      .then((shared) => {
+        if (shared) return;
+        // Desktop fallback — iframe print / save-as-PDF
         this.printViaIframe(html);
-      }
-    } finally {
-      this.exporting.set(false);
+      })
+      .catch(() => {
+        this.showToast('❌ Export failed', true);
+      })
+      .finally(() => this.busy.set(false));
+  }
+
+  // ── Share / Download helpers ──
+
+  /**
+   * Try the Web Share API with a file.
+   * Returns true if the share dialog was shown (even if user cancelled).
+   * Returns false if sharing is unavailable so the caller can try a fallback.
+   * Throws only if something truly unexpected happens.
+   */
+  private tryShareFile(blob: Blob, filename: string): Promise<boolean> {
+    // navigator.share must exist
+    if (typeof navigator.share !== 'function') {
+      return Promise.resolve(false);
     }
-  }
 
-  // ── Helpers ──
-
-  /** Capacitor injects window.Capacitor at runtime in the Android WebView */
-  private isNativeApp(): boolean {
-    return 'Capacitor' in window;
-  }
-
-  /** Share a file via Android's native share sheet */
-  private async shareFile(blob: Blob, filename: string): Promise<void> {
     const file = new File([blob], filename, { type: blob.type });
-    try {
-      await navigator.share({
-        files: [file],
-        title: `Expenzo – ${this.cycle().label}`,
-      });
-    } catch (e) {
-      // AbortError = user cancelled share → ignore
-      if (e instanceof DOMException && e.name === 'AbortError') return;
-      // Share not supported or failed → fall back to blob download
-      this.downloadBlob(blob, filename);
+
+    // If canShare exists, use it to check file support without consuming user activation
+    if (typeof navigator.canShare === 'function') {
+      try {
+        if (!navigator.canShare({ files: [file] })) {
+          return Promise.resolve(false);
+        }
+      } catch {
+        return Promise.resolve(false);
+      }
     }
+
+    // Call share — this consumes user activation
+    return navigator
+      .share({ files: [file], title: `Expenzo – ${this.cycle().label}` })
+      .then(() => {
+        this.showToast('✅ Shared successfully');
+        return true;
+      })
+      .catch((e: unknown) => {
+        // User cancelled — still counts as "handled"
+        if (e instanceof DOMException && e.name === 'AbortError') {
+          return true;
+        }
+        // Real failure — let caller try fallback
+        return false;
+      });
   }
 
-  private downloadBlob(blob: Blob, filename: string): void {
+  private triggerDownload(blob: Blob, filename: string): void {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -109,7 +147,7 @@ export class ExportData {
     setTimeout(() => {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-    }, 200);
+    }, 300);
   }
 
   private printViaIframe(html: string): void {
@@ -126,7 +164,6 @@ export class ExportData {
 
     setTimeout(() => {
       iframe.contentWindow?.print();
-      // Clean up after print dialog closes
       const cleanup = () => {
         try {
           document.body.removeChild(iframe);
@@ -135,9 +172,21 @@ export class ExportData {
         }
       };
       iframe.contentWindow?.addEventListener('afterprint', cleanup, { once: true });
-      // Fallback if afterprint never fires (e.g. dialog cancelled quickly)
       setTimeout(cleanup, 10_000);
     }, 400);
+  }
+
+  // ── Toast ──
+
+  private showToast(msg: string, isError = false): void {
+    this.toast.set(msg);
+    this.toastError.set(isError);
+    setTimeout(() => this.clearToast(), 3500);
+  }
+
+  private clearToast(): void {
+    this.toast.set('');
+    this.toastError.set(false);
   }
 
   // ── Data builders ──
