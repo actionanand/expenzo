@@ -8,6 +8,11 @@ on:
 permissions:
   contents: write
 
+# ── Android SDK version targets — edit here when Google requires a new target ──
+env:
+  MIN_SDK_VERSION: 22 # Android 5.1 Lollipop (~99% devices)
+  TARGET_SDK_VERSION: 35 # Android 15 — update when Google mandates a newer target
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -64,6 +69,10 @@ jobs:
             's/versionName "[^"]*"/versionName project.hasProperty("versionName") ? project.versionName : "1.0.0"/' \
             build.gradle
           echo "✅ build.gradle patched for dynamic versioning"
+          # Patch minSdkVersion and targetSdkVersion in variables.gradle
+          sed -i "s/minSdkVersion = .*/minSdkVersion = $MIN_SDK_VERSION/" ../variables.gradle
+          sed -i "s/targetSdkVersion = .*/targetSdkVersion = $TARGET_SDK_VERSION/" ../variables.gradle
+          echo "✅ variables.gradle patched: minSdk=$MIN_SDK_VERSION targetSdk=$TARGET_SDK_VERSION"
 
       - name: Sync web assets to Android
         run: npx cap sync android
@@ -206,7 +215,7 @@ jobs:
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git pull --rebase
+          git pull --rebase --autostash
           git add releases/
           git diff --cached --quiet || git commit -m "build: update APK & AAB releases [skip ci]"
           git push

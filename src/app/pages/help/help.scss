@@ -285,6 +285,7 @@
 
 .step-body {
   flex: 1;
+  min-width: 0; // allow flex child to shrink and let code-blocks scroll
 
   h3 {
     font-size: 0.88rem;
@@ -298,6 +299,7 @@
     color: var(--color-text-secondary);
     line-height: 1.5;
     margin: 0.25rem 0;
+    overflow-wrap: break-word;
   }
 }
 

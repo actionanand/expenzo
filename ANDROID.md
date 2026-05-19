@@ -126,20 +126,23 @@ When Google releases a new Android version (e.g. Android 16), you need to update
 
 ### Steps
 
-1. Check the new version's API level at [developer.android.com/tools/releases/platforms](https://developer.android.com/tools/releases/platforms).
+1. Check the new API level at [developer.android.com/tools/releases/platforms](https://developer.android.com/tools/releases/platforms).
 
-2. Update the workflow step in `.github/workflows/android-build.yml` — find the "Patch build.gradle" step or add a new one after `npx cap add android`:
+2. Open `.github/workflows/android-build.yml` and find the `env:` block near the top of the file:
 
    ```yaml
-   - name: Set Android SDK versions
-     working-directory: android
-     run: |
-       sed -i 's/targetSdkVersion = .*/targetSdkVersion = 36/' variables.gradle
+   env:
+     MIN_SDK_VERSION: 22 # Android 5.1 Lollipop (~99% devices)
+     TARGET_SDK_VERSION: 35 # Android 15 — update this value
    ```
 
-3. Also update the Capacitor Android dependency in the workflow to a version that supports the new SDK:
+   Change `TARGET_SDK_VERSION` to the new API level, e.g. `36` for Android 16.
 
-   ```yaml
+3. Also update the Capacitor Android dependency in the workflow to ensure it supports the new SDK:
+
+   Change the install line to use `@capacitor/android@latest`:
+
+   ```bash
    npm install --no-save @capacitor/cli @capacitor/core @capacitor/android@latest
    ```
 
@@ -151,38 +154,23 @@ When Google releases a new Android version (e.g. Android 16), you need to update
 | --------- | --------------- | ------------ |
 | 34        | 14              | 2023         |
 | 35        | 15              | 2024         |
-| 36        | 16              | 2025 (est.)  |
+| 36        | 16              | 2025         |
 
 ---
 
 ## Changing Supported Android Versions
 
-The default Capacitor Android project targets:
-
-- **minSdkVersion**: 22 (Android 5.1 Lollipop) — ~99% of devices
-- **targetSdkVersion**: 34 (Android 14)
-
-### Check current values
-
-After `npx cap add android`, the values live in `android/variables.gradle`:
-
-```bash
-cat android/variables.gradle | grep -E 'minSdk|targetSdk'
-```
-
-### Change in CI workflow
-
-Add a step after `npx cap add android`:
+The current targets are configured as workflow-level environment variables in `.github/workflows/android-build.yml`:
 
 ```yaml
-- name: Set Android SDK versions
-  working-directory: android
-  run: |
-    sed -i 's/minSdkVersion = .*/minSdkVersion = 26/' variables.gradle
-    sed -i 's/targetSdkVersion = .*/targetSdkVersion = 35/' variables.gradle
+env:
+  MIN_SDK_VERSION: 22 # Android 5.1 Lollipop (~99% devices)
+  TARGET_SDK_VERSION: 35 # Android 15
 ```
 
-Common values:
+Edit these two values and push — CI applies them automatically via `sed` to `variables.gradle` during the build.
+
+Common `minSdkVersion` values:
 
 | minSdkVersion | Android Version | Device coverage |
 | ------------- | --------------- | --------------- |

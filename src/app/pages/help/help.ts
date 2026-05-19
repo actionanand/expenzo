@@ -611,8 +611,8 @@ type HelpTab = 'sheets' | 'android';
                   </tr>
                   <tr>
                     <td><code>targetSdkVersion</code></td>
-                    <td>34</td>
-                    <td>Target: Android 14 — app optimised for this version</td>
+                    <td>35</td>
+                    <td>Target: Android 15 — app optimised for this version</td>
                   </tr>
                 </tbody>
               </table>
@@ -620,16 +620,15 @@ type HelpTab = 'sheets' | 'android';
             <h3 class="subsection-heading">When a new Android version is released</h3>
             <p class="section-desc">
               Google requires apps to target the latest SDK within ~12 months of release. Edit the
-              <em>"Patch build.gradle"</em> step in
+              <code>env:</code> block near the top of
               <code>.github/workflows/android-build.yml</code>:
             </p>
-            <div class="code-block">
-              sed -i 's/targetSdkVersion = .*/targetSdkVersion = 36/' variables.gradle
-            </div>
-            <p class="section-desc">To control minimum device support:</p>
-            <div class="code-block">
-              sed -i 's/minSdkVersion = .*/minSdkVersion = 26/' variables.gradle
-            </div>
+            <div class="code-block">TARGET_SDK_VERSION: 36 # Android 16</div>
+            <p class="section-desc">
+              To change minimum device support, update <code>MIN_SDK_VERSION</code> in the same
+              block:
+            </p>
+            <div class="code-block">MIN_SDK_VERSION: 26 # Android 8.0 Oreo</div>
             <div class="table-wrap">
               <table class="info-table">
                 <thead>
@@ -754,10 +753,11 @@ type HelpTab = 'sheets' | 'android';
                 <span class="step-num">2</span>
                 <div class="step-body">
                   <h3>Encode to base64</h3>
-                  <div class="code-block">
-                    # Save to file (recommended) base64 -w 0 release-keystore.jks > keystore.b64.txt
-                    # Or print directly to terminal base64 -w 0 release-keystore.jks
-                  </div>
+                  <p>Save to file (recommended)</p>
+                  <div class="code-block">base64 -w 0 release-keystore.jks > keystore.b64.txt</div>
+
+                  <p>(alternative) print directly to terminal and copy output</p>
+                  <div class="code-block">base64 -w 0 release-keystore.jks</div>
                   <p>Open <code>keystore.b64.txt</code> and copy all its contents.</p>
                 </div>
               </div>
