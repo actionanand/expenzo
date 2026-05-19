@@ -81,6 +81,8 @@ jobs:
         run: |
           # Copy source icon to all required Android mipmap densities
           ICON_SRC="public/expenzo.png"
+          # Remove adaptive icon XML so Android uses our PNG directly
+          rm -rf android/app/src/main/res/mipmap-anydpi-v26
           declare -A SIZES=(
             ["mipmap-mdpi"]=48
             ["mipmap-hdpi"]=72
@@ -95,6 +97,8 @@ jobs:
               "android/app/src/main/res/$DIR/ic_launcher.png"
             convert "$ICON_SRC" -resize "${SIZE}x${SIZE}" \
               "android/app/src/main/res/$DIR/ic_launcher_round.png"
+            convert "$ICON_SRC" -resize "${SIZE}x${SIZE}" \
+              "android/app/src/main/res/$DIR/ic_launcher_foreground.png"
           done
           # Play Store icon (512x512) — save for reference
           convert "$ICON_SRC" -resize 512x512 releases/playstore-icon.png 2>/dev/null || true

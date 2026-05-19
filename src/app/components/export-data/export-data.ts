@@ -76,11 +76,29 @@ export class ExportData {
     }
     html += `</table></body></html>`;
 
-    const printWindow = window.open('', '_blank');
-    if (printWindow) {
-      printWindow.document.write(html);
-      printWindow.document.close();
-      printWindow.print();
+    this.printHtml(html);
+  }
+
+  private printHtml(html: string): void {
+    // Use hidden iframe to avoid opening system browser in Capacitor/Android
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.left = '-9999px';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentDocument ?? iframe.contentWindow?.document;
+    if (doc) {
+      doc.open();
+      doc.write(html);
+      doc.close();
+      // Wait for content to render before printing
+      setTimeout(() => {
+        iframe.contentWindow?.print();
+        // Clean up after print dialog closes
+        setTimeout(() => document.body.removeChild(iframe), 1000);
+      }, 300);
     }
   }
 
