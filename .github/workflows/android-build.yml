@@ -73,7 +73,9 @@ jobs:
 
       # ── Signed APK ──
       - name: Sign APK
+        id: sign_apk
         if: steps.keystore.outputs.available == 'true'
+        continue-on-error: true
         env:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
@@ -88,24 +90,30 @@ jobs:
 
           "$BUILD_TOOLS_DIR/apksigner" sign \
             --ks android/app/release-keystore.jks \
-            --ks-pass "pass:$KEYSTORE_PASSWORD" \
-            --ks-key-alias "$KEY_ALIAS" \
-            --key-pass "pass:$KEY_PASSWORD" \
+            --ks-pass "pass:${KEYSTORE_PASSWORD}" \
+            --ks-key-alias "${KEY_ALIAS}" \
+            --key-pass "pass:${KEY_PASSWORD}" \
             "$ALIGNED_APK"
 
           echo "✅ APK signed successfully"
 
       # ── Unsigned APK fallback ──
-      - name: Copy unsigned APK (no keystore)
-        if: steps.keystore.outputs.available != 'true'
+      - name: Copy unsigned APK (fallback)
+        if: steps.keystore.outputs.available != 'true' || steps.sign_apk.outcome == 'failure'
         run: |
           UNSIGNED_APK=$(find android/app/build -name "*-release-unsigned.apk" | head -1)
           cp "$UNSIGNED_APK" android/app/build/outputs/apk/release/expenzo-release.apk
-          echo "⚠️ No keystore configured — APK is unsigned"
+          if [[ "${{ steps.sign_apk.outcome }}" == "failure" ]]; then
+            echo "::warning title=Unsigned APK::Signing failed — keystore password mismatch or corrupt keystore. See ANDROID.md to regenerate the keystore. APK is unsigned."
+          else
+            echo "::warning title=Unsigned APK::KEYSTORE_BASE64 secret not set. APK is unsigned."
+          fi
 
       # ── Signed AAB ──
       - name: Sign AAB
+        id: sign_aab
         if: steps.keystore.outputs.available == 'true'
+        continue-on-error: true
         env:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
@@ -116,21 +124,25 @@ jobs:
 
           jarsigner -verbose \
             -keystore android/app/release-keystore.jks \
-            -storepass "$KEYSTORE_PASSWORD" \
-            -keypass "$KEY_PASSWORD" \
+            -storepass "${KEYSTORE_PASSWORD}" \
+            -keypass "${KEY_PASSWORD}" \
             -signedjar "$SIGNED_AAB" \
             "$UNSIGNED_AAB" \
-            "$KEY_ALIAS"
+            "${KEY_ALIAS}"
 
           echo "✅ AAB signed successfully"
 
       # ── Unsigned AAB fallback ──
-      - name: Copy unsigned AAB (no keystore)
-        if: steps.keystore.outputs.available != 'true'
+      - name: Copy unsigned AAB (fallback)
+        if: steps.keystore.outputs.available != 'true' || steps.sign_aab.outcome == 'failure'
         run: |
           UNSIGNED_AAB=$(find android/app/build -name "*-release.aab" | head -1)
           cp "$UNSIGNED_AAB" android/app/build/outputs/bundle/release/expenzo-release.aab
-          echo "⚠️ No keystore configured — AAB is unsigned"
+          if [[ "${{ steps.sign_aab.outcome }}" == "failure" ]]; then
+            echo "::warning title=Unsigned AAB::Signing failed — keystore password mismatch or corrupt keystore. See ANDROID.md to regenerate the keystore. AAB is unsigned."
+          else
+            echo "::warning title=Unsigned AAB::KEYSTORE_BASE64 secret not set. AAB is unsigned."
+          fi
 
       # ── Upload artifacts ──
       - name: Upload APK
