@@ -144,6 +144,19 @@ jobs:
             echo "::warning title=Unsigned AAB::KEYSTORE_BASE64 secret not set. AAB is unsigned."
           fi
 
+      # ── Commit releases to branch ──
+      - name: Commit APK & AAB to branch
+        run: |
+          mkdir -p releases
+          cp android/app/build/outputs/apk/release/expenzo-release.apk releases/expenzo-release.apk
+          cp android/app/build/outputs/bundle/release/expenzo-release.aab releases/expenzo-release.aab
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add releases/
+          git diff --cached --quiet || git commit -m "build: update APK & AAB releases [skip ci]"
+          git push
+
       # ── Upload artifacts ──
       - name: Upload APK
         uses: actions/upload-artifact@v4

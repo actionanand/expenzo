@@ -32,9 +32,10 @@ The `android/` directory is **never committed** — it's generated fresh in ever
 ## How It Works
 
 1. Push to the `main-android` branch triggers the workflow.
-2. CI builds the Angular app, installs Capacitor, generates the Android project, builds and (optionally) signs the APK.
-3. The APK is uploaded as a GitHub Actions artifact (downloadable for 30 days).
-4. If you push a **git tag**, a GitHub Release is also created with the APK attached.
+2. CI builds the Angular app, installs Capacitor, generates the Android project, builds and signs the APK & AAB.
+3. The signed files are **committed to the `releases/` folder** of the `main-android` branch — browse them directly in GitHub.
+4. Both files are also uploaded as **GitHub Actions artifacts** (downloadable for 30 days) from the Actions tab.
+5. If you push a **git tag**, a GitHub Release is also created with both files attached.
 
 ---
 
@@ -66,20 +67,26 @@ keytool -genkeypair \
   -keyalg RSA \
   -keysize 2048 \
   -validity 10000 \
-  -storepass YOUR_STORE_PASSWORD \
-  -keypass YOUR_KEY_PASSWORD \
+  -storepass 'YOUR_STORE_PASSWORD' \
+  -keypass 'YOUR_KEY_PASSWORD' \
   -alias expenzo \
   -keystore release-keystore.jks \
   -dname "CN=Expenzo, OU=Mobile, O=Expenzo, L=City, ST=State, C=IN"
 ```
 
+> **Important:** Always wrap passwords in **single quotes** (`'...'`) in bash. Double quotes allow `$`, `!`, `@` etc. to be interpreted as special characters, which silently changes the password.
+
 ### Step 2: Base64-encode it for GitHub Secrets
 
 ```bash
+# Option A — save to a file (easier to copy)
+base64 -w 0 release-keystore.jks > keystore.b64.txt
+
+# Option B — print directly to terminal
 base64 -w 0 release-keystore.jks
 ```
 
-Copy the output and save it as the `KEYSTORE_BASE64` secret.
+Open `keystore.b64.txt` (or copy terminal output) and save it as the `KEYSTORE_BASE64` secret.
 
 ### Step 3: Add remaining secrets
 
@@ -141,7 +148,7 @@ Common values:
 
 ## Triggering a Build
 
-### Regular build (artifact only)
+### Regular build
 
 ```bash
 git checkout main-android
@@ -149,7 +156,10 @@ git merge main        # or cherry-pick changes
 git push origin main-android
 ```
 
-Download the APK from **Actions → Android APK Build → Artifacts**.
+After the workflow finishes, the files are available in **two places**:
+
+- `releases/expenzo-release.apk` and `releases/expenzo-release.aab` — committed directly to the `main-android` branch (browse in GitHub → download)
+- **Actions → Android APK & AAB Build → Artifacts** — downloadable for 30 days
 
 ### Tagged release (creates GitHub Release)
 
