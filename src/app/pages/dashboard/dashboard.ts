@@ -22,6 +22,7 @@ import { DailyAverage } from '../../components/daily-average/daily-average';
 import { BudgetGauge } from '../../components/budget-gauge/budget-gauge';
 import { ExportData } from '../../components/export-data/export-data';
 import { transformToCycles } from '../../utils/cycle-transformer';
+import { CacheService } from '../../services/cache.service';
 import { environment } from '../../../environments/environment';
 
 type ViewTab = 'month' | 'stats';
@@ -45,7 +46,7 @@ type ViewTab = 'month' | 'stats';
   ],
   template: `
     <app-header [cycleStartDay]="cycleStartDay()" (cycleChange)="onCycleChange($event)" />
-    <app-pull-to-refresh (refresh)="loadData()" />
+    <app-pull-to-refresh (refresh)="loadData(true)" />
 
     @if (loading()) {
       <div class="loading">
@@ -128,6 +129,7 @@ type ViewTab = 'month' | 'stats';
 })
 export class Dashboard implements OnInit {
   private readonly expenseService = inject(ExpenseService);
+  private readonly cache = inject(CacheService);
 
   protected readonly data = signal<ExpenseResponse | null>(null);
   protected readonly cycles = signal<CycleData[]>([]);
@@ -161,26 +163,48 @@ export class Dashboard implements OnInit {
   }
 
   protected retry(): void {
-    this.loadData();
+    this.loadData(true);
   }
 
-  protected loadData(): void {
+  protected loadData(forceRefresh = false): void {
+    const cacheKey = `dashboard_${this.cycleStartDay()}`;
+
+    // Check memory cache (valid for 5 min) unless force refresh (pull-to-refresh)
+    if (!forceRefresh) {
+      const cached = this.cache.get<ExpenseResponse>(cacheKey);
+      if (cached) {
+        this.applyData(cached);
+        return;
+      }
+    }
+
     this.loading.set(true);
     this.error.set(null);
     this.expenseService.getExpenses(this.cycleStartDay()).subscribe({
       next: (response) => {
-        this.data.set(response);
-        const cycleData = transformToCycles(response);
-        this.cycles.set(cycleData);
-        // Default to latest cycle (last in array)
-        const lastIndex = cycleData.length > 0 ? cycleData.length - 1 : 0;
-        this.selectedCycleIndex.set(lastIndex);
-        this.loading.set(false);
+        this.cache.set(cacheKey, response);
+        this.applyData(response);
       },
       error: () => {
-        this.error.set('Failed to load expense data. Please try again.');
-        this.loading.set(false);
+        // Offline fallback — use last stored data
+        const offline = this.cache.getOffline<ExpenseResponse>(cacheKey);
+        if (offline) {
+          this.applyData(offline);
+          this.cache.showOfflineToast();
+        } else {
+          this.error.set('Failed to load expense data. Please try again.');
+          this.loading.set(false);
+        }
       },
     });
+  }
+
+  private applyData(response: ExpenseResponse): void {
+    this.data.set(response);
+    const cycleData = transformToCycles(response);
+    this.cycles.set(cycleData);
+    const lastIndex = cycleData.length > 0 ? cycleData.length - 1 : 0;
+    this.selectedCycleIndex.set(lastIndex);
+    this.loading.set(false);
   }
 }

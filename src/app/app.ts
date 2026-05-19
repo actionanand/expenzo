@@ -4,6 +4,7 @@ import { Store } from '@ngrx/store';
 
 import { initTheme } from './store/theme/theme.actions';
 import { AuthGate } from './components/auth-gate/auth-gate';
+import { CacheService } from './services/cache.service';
 
 @Component({
   selector: 'app-root',
@@ -14,6 +15,7 @@ import { AuthGate } from './components/auth-gate/auth-gate';
 })
 export class App implements OnInit {
   private readonly store = inject(Store);
+  protected readonly cache = inject(CacheService);
 
   ngOnInit(): void {
     this.store.dispatch(initTheme());

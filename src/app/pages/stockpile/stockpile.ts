@@ -4,6 +4,7 @@ import { RouterLink } from '@angular/router';
 import { WishlistService } from '../../services/wishlist.service';
 import { WishlistItem } from '../../models/wishlist.model';
 import { PullToRefresh } from '../../components/pull-to-refresh/pull-to-refresh';
+import { CacheService } from '../../services/cache.service';
 
 @Component({
   selector: 'app-stockpile',
@@ -17,7 +18,7 @@ import { PullToRefresh } from '../../components/pull-to-refresh/pull-to-refresh'
         <span class="item-count">{{ items().length }} items</span>
       </header>
 
-      <app-pull-to-refresh (refresh)="loadItems()" />
+      <app-pull-to-refresh (refresh)="loadItems(true)" />
 
       @if (loading()) {
         <div class="loading-state">
@@ -64,6 +65,7 @@ import { PullToRefresh } from '../../components/pull-to-refresh/pull-to-refresh'
 })
 export class Stockpile implements OnInit {
   private readonly wishlistService = inject(WishlistService);
+  private readonly cache = inject(CacheService);
 
   protected readonly items = signal<WishlistItem[]>([]);
   protected readonly loading = signal(true);
@@ -73,17 +75,36 @@ export class Stockpile implements OnInit {
     this.loadItems();
   }
 
-  protected loadItems(): void {
+  protected loadItems(forceRefresh = false): void {
+    const cacheKey = 'stockpile';
+
+    if (!forceRefresh) {
+      const cached = this.cache.get<WishlistItem[]>(cacheKey);
+      if (cached) {
+        this.items.set(cached);
+        this.loading.set(false);
+        return;
+      }
+    }
+
     this.loading.set(true);
     this.error.set(null);
     this.wishlistService.getWishlist().subscribe({
       next: (data) => {
+        this.cache.set(cacheKey, data);
         this.items.set(data);
         this.loading.set(false);
       },
       error: () => {
-        this.error.set('Failed to load wishlist. Please try again.');
-        this.loading.set(false);
+        const offline = this.cache.getOffline<WishlistItem[]>(cacheKey);
+        if (offline) {
+          this.items.set(offline);
+          this.loading.set(false);
+          this.cache.showOfflineToast();
+        } else {
+          this.error.set('Failed to load wishlist. Please try again.');
+          this.loading.set(false);
+        }
       },
     });
   }

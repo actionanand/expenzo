@@ -14,12 +14,14 @@ import { AuthService } from '../../services/auth.service';
           <h1 class="auth-title">Expenzo</h1>
           <p class="auth-subtitle">Enter password to continue</p>
           <form (submit)="onSubmit($event)">
+            <input type="hidden" name="username" value="expenzo" autocomplete="username" />
             <div class="input-group">
               <input
                 [type]="showPassword() ? 'text' : 'password'"
                 class="auth-input"
                 [class.error]="errorMsg()"
                 placeholder="Password"
+                name="password"
                 [value]="password()"
                 (input)="onInput($event)"
                 autocomplete="current-password"

@@ -13,7 +13,7 @@ export class AuthService {
   async login(password: string): Promise<boolean> {
     const hash = await this.sha1(password);
     if (hash === environment.passwordHash) {
-      sessionStorage.setItem(this.AUTH_KEY, hash);
+      localStorage.setItem(this.AUTH_KEY, hash);
       this.isAuthenticated.set(true);
       return true;
     }
@@ -21,12 +21,12 @@ export class AuthService {
   }
 
   logout(): void {
-    sessionStorage.removeItem(this.AUTH_KEY);
+    localStorage.removeItem(this.AUTH_KEY);
     this.isAuthenticated.set(false);
   }
 
   private checkStoredAuth(): boolean {
-    return sessionStorage.getItem(this.AUTH_KEY) === environment.passwordHash;
+    return localStorage.getItem(this.AUTH_KEY) === environment.passwordHash;
   }
 
   private async sha1(message: string): Promise<string> {

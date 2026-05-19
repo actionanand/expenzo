@@ -1,2 +1,7 @@
 <app-auth-gate />
 <router-outlet />
+@if (cache.offlineToast()) {
+  <div class="offline-toast" role="status" aria-live="polite">
+    📡 Showing offline data. Connect to internet for latest.
+  </div>
+}
