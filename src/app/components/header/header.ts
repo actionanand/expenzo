@@ -13,6 +13,7 @@ import { CycleSelector } from '../cycle-selector/cycle-selector';
       <h1 class="app-title">Expenzo</h1>
       <div class="header-actions">
         <a routerLink="/stockpile" class="nav-link" aria-label="Stockpile wishlist">🛒</a>
+        <a routerLink="/checklist" class="nav-link" aria-label="Checklist">✅</a>
         <a routerLink="/help" class="nav-link" aria-label="Help & setup guide">❓</a>
         <app-cycle-selector
           [cycleStartDay]="cycleStartDay()"

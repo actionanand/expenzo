@@ -10,5 +10,6 @@ export const environment = {
   apiUrl: buildApiUrl(scriptKey),
   googleSheetId: '1HjiojQtfHcyWtFqNzHttgCO36EK7s5eEoQQl9_jxxUw',
   wishlistSheetGid: '1994871759',
+  checklistSheetGid: '310147483',
   passwordHash: 'PASSWORD_HASH_PLACEHOLDER', // To be replaced during build with actual hash
 };
