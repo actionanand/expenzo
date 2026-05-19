@@ -12,6 +12,7 @@ permissions:
 env:
   MIN_SDK_VERSION: 24 # Android 7.0 (Nougat) — update when Google mandates a newer minimum (currently 24 for Play Store)
   TARGET_SDK_VERSION: 35 # Android 15 (UpsideDownCake) — update when Google mandates a newer target
+  # FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true # Opt into Node.js 24 for all actions (required from June 2026)
 
 jobs:
   build:
