@@ -472,28 +472,23 @@ type HelpTab = 'sheets' | 'android';
             </p>
             <div class="flow-steps">
               <div class="flow-step">
-                <span class="flow-icon">🔨</span>
-                <span>Angular build</span>
+                <span class="flow-icon">🔨</span><span>Angular build</span>
               </div>
               <span class="flow-arrow">→</span>
               <div class="flow-step">
-                <span class="flow-icon">📦</span>
-                <span>Capacitor sync</span>
+                <span class="flow-icon">📦</span><span>Capacitor sync</span>
               </div>
               <span class="flow-arrow">→</span>
               <div class="flow-step">
-                <span class="flow-icon">🤖</span>
-                <span>Gradle build</span>
+                <span class="flow-icon">🤖</span><span>Gradle build</span>
               </div>
               <span class="flow-arrow">→</span>
               <div class="flow-step">
-                <span class="flow-icon">🔐</span>
-                <span>Sign APK/AAB</span>
+                <span class="flow-icon">🔐</span><span>Sign APK/AAB</span>
               </div>
               <span class="flow-arrow">→</span>
               <div class="flow-step">
-                <span class="flow-icon">📥</span>
-                <span>Saved to branch</span>
+                <span class="flow-icon">📥</span><span>Saved to branch</span>
               </div>
             </div>
           </section>
@@ -512,18 +507,16 @@ type HelpTab = 'sheets' | 'android';
           <!-- Download the APK / AAB -->
           <section class="help-section">
             <h2 class="section-heading">Download the APK / AAB</h2>
-            <p class="section-desc">
-              After the workflow finishes, files are available in two places:
-            </p>
+            <p class="section-desc">After the workflow finishes, files are in two places:</p>
             <div class="step-list">
               <div class="step">
                 <span class="step-num">1</span>
                 <div class="step-body">
                   <h3>releases/ folder (permanent)</h3>
                   <p>
-                    Go to your GitHub repo → switch to branch <strong>main-android</strong> → open
-                    the <strong>releases/</strong> folder → download
-                    <code>expenzo-release.apk</code> or <code>expenzo-release.aab</code>.
+                    GitHub repo → switch to branch <strong>main-android</strong> → open the
+                    <strong>releases/</strong> folder → download <code>expenzo-release.apk</code> or
+                    <code>expenzo-release.aab</code>.
                   </p>
                 </div>
               </div>
@@ -542,9 +535,197 @@ type HelpTab = 'sheets' | 'android';
             <div class="alert alert-info">
               <span class="alert-icon">ℹ️</span>
               <div>
-                <strong>APK</strong> (Android Package Kit) — install directly on a device
-                (sideload).<br />
-                <strong>AAB</strong> (Android App Bundle) — required for Play Store uploads.
+                <strong>APK</strong> — install directly on a device (sideload).<br />
+                <strong>AAB</strong> — required for Play Store uploads.
+              </div>
+            </div>
+          </section>
+
+          <!-- App Version -->
+          <section class="help-section">
+            <h2 class="section-heading">App Version (versionCode & versionName)</h2>
+            <p class="section-desc">
+              Versions are stored in <code>android-version.json</code> at the root of the repo.
+            </p>
+            <div class="code-block">&#123; "versionCode": 1, "versionName": "1.0.0" &#125;</div>
+            <p class="section-desc">
+              <strong>versionCode</strong> — an integer, must increase with every Play Store
+              upload.<br />
+              <strong>versionName</strong> — human-readable (shown in app info).
+            </p>
+            <h3 class="subsection-heading">Auto-increment (npm scripts)</h3>
+            <div class="table-wrap">
+              <table class="info-table">
+                <thead>
+                  <tr>
+                    <th>Command</th>
+                    <th>Effect</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><code>npm run android:version</code></td>
+                    <td>versionCode +1 only</td>
+                  </tr>
+                  <tr>
+                    <td><code>npm run android:version:patch</code></td>
+                    <td>versionCode +1, patch (1.0.0 → 1.0.1)</td>
+                  </tr>
+                  <tr>
+                    <td><code>npm run android:version:minor</code></td>
+                    <td>versionCode +1, minor (1.0.0 → 1.1.0)</td>
+                  </tr>
+                  <tr>
+                    <td><code>npm run android:version:major</code></td>
+                    <td>versionCode +1, major (1.0.0 → 2.0.0)</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <h3 class="subsection-heading">Manual update</h3>
+            <p class="section-desc">
+              Open <code>android-version.json</code> and edit the values directly, then commit and
+              push to <code>main-android</code>.
+            </p>
+            <div class="alert alert-info">
+              <span class="alert-icon">ℹ️</span>
+              <div>
+                Run <code>npm run android:version:patch</code>, commit
+                <code>android-version.json</code>, then push to <code>main-android</code>. The CI
+                reads this file and passes the values to Gradle automatically.
+              </div>
+            </div>
+          </section>
+
+          <!-- Android Version Support -->
+          <section class="help-section">
+            <h2 class="section-heading">Android Version Support</h2>
+            <p class="section-desc">The app currently targets:</p>
+            <div class="table-wrap">
+              <table class="info-table">
+                <thead>
+                  <tr>
+                    <th>Setting</th>
+                    <th>Value</th>
+                    <th>Meaning</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><code>minSdkVersion</code></td>
+                    <td>22</td>
+                    <td>Minimum: Android 5.1 (Lollipop) — ~99% devices</td>
+                  </tr>
+                  <tr>
+                    <td><code>targetSdkVersion</code></td>
+                    <td>34</td>
+                    <td>Target: Android 14 — app optimised for this version</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <p class="section-desc">
+              To change these, edit <code>android-version.json</code> or add a step in the workflow
+              after <em>Add Android platform</em>:
+            </p>
+            <div class="code-block">
+              # In .github/workflows/android-build.yml - name: Set Android SDK versions
+              working-directory: android run: | sed -i 's/minSdkVersion = .*/minSdkVersion = 26/'
+              variables.gradle sed -i 's/targetSdkVersion = .*/targetSdkVersion = 35/'
+              variables.gradle
+            </div>
+            <div class="table-wrap">
+              <table class="info-table">
+                <thead>
+                  <tr>
+                    <th>minSdkVersion</th>
+                    <th>Android</th>
+                    <th>Device coverage</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>22</td>
+                    <td>5.1 Lollipop</td>
+                    <td>~99%</td>
+                  </tr>
+                  <tr>
+                    <td>24</td>
+                    <td>7.0 Nougat</td>
+                    <td>~97%</td>
+                  </tr>
+                  <tr>
+                    <td>26</td>
+                    <td>8.0 Oreo</td>
+                    <td>~93%</td>
+                  </tr>
+                  <tr>
+                    <td>28</td>
+                    <td>9.0 Pie</td>
+                    <td>~85%</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <!-- App Icon -->
+          <section class="help-section">
+            <h2 class="section-heading">App Icon</h2>
+            <p class="section-desc">
+              The icon is read from <code>public/expenzo.png</code> and automatically resized to all
+              required Android densities during the CI build using ImageMagick. The
+              <code>releases/</code> folder also gets a 512×512 <code>playstore-icon.png</code>
+              ready for the Play Store listing.
+            </p>
+            <div class="table-wrap">
+              <table class="info-table">
+                <thead>
+                  <tr>
+                    <th>Density</th>
+                    <th>Size</th>
+                    <th>Used for</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>mdpi</td>
+                    <td>48×48</td>
+                    <td>Low-density screens</td>
+                  </tr>
+                  <tr>
+                    <td>hdpi</td>
+                    <td>72×72</td>
+                    <td>Medium screens</td>
+                  </tr>
+                  <tr>
+                    <td>xhdpi</td>
+                    <td>96×96</td>
+                    <td>High-density screens</td>
+                  </tr>
+                  <tr>
+                    <td>xxhdpi</td>
+                    <td>144×144</td>
+                    <td>Extra-high screens</td>
+                  </tr>
+                  <tr>
+                    <td>xxxhdpi</td>
+                    <td>192×192</td>
+                    <td>Flagship devices</td>
+                  </tr>
+                  <tr>
+                    <td>Play Store</td>
+                    <td>512×512</td>
+                    <td>Store listing icon</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="alert alert-info">
+              <span class="alert-icon">ℹ️</span>
+              <div>
+                To change the icon, replace <code>public/expenzo.png</code> with a square PNG (at
+                least 512×512 px) and push.
               </div>
             </div>
           </section>
@@ -562,8 +743,9 @@ type HelpTab = 'sheets' | 'android';
                 <div class="step-body">
                   <h3>Generate keystore</h3>
                   <p>
-                    Run in terminal — <strong>use single quotes</strong> around passwords to prevent
-                    shell expansion of special characters:
+                    Run in terminal. Use <strong>single quotes</strong> around passwords — double
+                    quotes allow <code>$</code>, <code>!</code> to be expanded by the shell,
+                    silently changing your password.
                   </p>
                   <div class="code-block">
                     keytool -genkeypair -v -storetype JKS -keyalg RSA -keysize 2048 -validity 10000
@@ -576,8 +758,11 @@ type HelpTab = 'sheets' | 'android';
                 <span class="step-num">2</span>
                 <div class="step-body">
                   <h3>Encode to base64</h3>
-                  <div class="code-block">base64 -w 0 release-keystore.jks > keystore.b64.txt</div>
-                  <p>Open <code>keystore.b64.txt</code> and copy its contents.</p>
+                  <div class="code-block">
+                    # Save to file (recommended) base64 -w 0 release-keystore.jks > keystore.b64.txt
+                    # Or print directly to terminal base64 -w 0 release-keystore.jks
+                  </div>
+                  <p>Open <code>keystore.b64.txt</code> and copy all its contents.</p>
                 </div>
               </div>
               <div class="step">
@@ -585,7 +770,6 @@ type HelpTab = 'sheets' | 'android';
                 <div class="step-body">
                   <h3>Add GitHub Secrets</h3>
                   <p>
-                    Go to
                     <strong
                       >Settings → Secrets and variables → Actions → New repository secret</strong
                     >
@@ -609,7 +793,7 @@ type HelpTab = 'sheets' | 'android';
                         </tr>
                         <tr>
                           <td><code>KEY_ALIAS</code></td>
-                          <td>expenzo (or your alias)</td>
+                          <td>expenzo</td>
                         </tr>
                         <tr>
                           <td><code>KEY_PASSWORD</code></td>
@@ -657,7 +841,10 @@ type HelpTab = 'sheets' | 'android';
                 <span class="step-num">3</span>
                 <div class="step-body">
                   <h3>Complete Store Listing</h3>
-                  <p>Add description, screenshots (min 2), feature graphic, and icon.</p>
+                  <p>
+                    Add description, screenshots (min 2), feature graphic, and icon (use
+                    <code>releases/playstore-icon.png</code>).
+                  </p>
                 </div>
               </div>
               <div class="step">
@@ -675,8 +862,9 @@ type HelpTab = 'sheets' | 'android';
             <div class="alert alert-info">
               <span class="alert-icon">ℹ️</span>
               <div>
-                Each upload must have a <strong>higher versionCode</strong>. Edit
-                <code>android/app/build.gradle</code> in the workflow or set it via Gradle args.
+                Each upload must have a <strong>higher versionCode</strong>. Run
+                <code>npm run android:version:patch</code> and commit before pushing to
+                <code>main-android</code>.
               </div>
             </div>
           </section>

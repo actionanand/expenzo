@@ -50,14 +50,53 @@ jobs:
       - name: Add Android platform
         run: npx cap add android
 
+      - name: Patch build.gradle to accept version properties
+        working-directory: android/app
+        run: |
+          # Replace hardcoded versionCode/versionName with Gradle properties (fallback to defaults)
+          sed -i \
+            's/versionCode [0-9]*/versionCode project.hasProperty("versionCode") ? project.versionCode.toInteger() : 1/' \
+            build.gradle
+          sed -i \
+            's/versionName "[^"]*"/versionName project.hasProperty("versionName") ? project.versionName : "1.0.0"/' \
+            build.gradle
+          echo "✅ build.gradle patched for dynamic versioning"
+
       - name: Sync web assets to Android
         run: npx cap sync android
+
+      - name: Inject app icon
+        run: |
+          # Copy source icon to all required Android mipmap densities
+          ICON_SRC="public/expenzo.png"
+          declare -A SIZES=(
+            ["mipmap-mdpi"]=48
+            ["mipmap-hdpi"]=72
+            ["mipmap-xhdpi"]=96
+            ["mipmap-xxhdpi"]=144
+            ["mipmap-xxxhdpi"]=192
+          )
+          for DIR in "${!SIZES[@]}"; do
+            SIZE=${SIZES[$DIR]}
+            mkdir -p "android/app/src/main/res/$DIR"
+            convert "$ICON_SRC" -resize "${SIZE}x${SIZE}" \
+              "android/app/src/main/res/$DIR/ic_launcher.png"
+            convert "$ICON_SRC" -resize "${SIZE}x${SIZE}" \
+              "android/app/src/main/res/$DIR/ic_launcher_round.png"
+          done
+          # Play Store icon (512x512) — save for reference
+          convert "$ICON_SRC" -resize 512x512 releases/playstore-icon.png 2>/dev/null || true
+          echo "✅ Icons injected"
 
       - name: Build APK & AAB with Gradle
         working-directory: android
         run: |
-          ./gradlew assembleRelease
-          ./gradlew bundleRelease
+          VERSION_CODE=$(node -p "require('../android-version.json').versionCode")
+          VERSION_NAME=$(node -p "require('../android-version.json').versionName")
+          echo "Building versionCode=$VERSION_CODE versionName=$VERSION_NAME"
+          ./gradlew assembleRelease bundleRelease \
+            -PversionCode="$VERSION_CODE" \
+            -PversionName="$VERSION_NAME"
 
       - name: Decode keystore
         id: keystore
@@ -148,8 +187,12 @@ jobs:
       - name: Commit APK & AAB to branch
         run: |
           mkdir -p releases
+          # Remove old builds before copying new ones
+          rm -f releases/expenzo-release.apk releases/expenzo-release.aab
           cp android/app/build/outputs/apk/release/expenzo-release.apk releases/expenzo-release.apk
           cp android/app/build/outputs/bundle/release/expenzo-release.aab releases/expenzo-release.aab
+          # Generate Play Store icon (512x512) if ImageMagick available
+          convert public/expenzo.png -resize 512x512 releases/playstore-icon.png 2>/dev/null || true
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
