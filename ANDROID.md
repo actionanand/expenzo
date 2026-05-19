@@ -124,25 +124,91 @@ const config: CapacitorConfig = {
 
 The default Capacitor Android project targets:
 
-- **minSdkVersion**: 22 (Android 5.1)
+- **minSdkVersion**: 22 (Android 5.1 Lollipop) — ~99% of devices
 - **targetSdkVersion**: 34 (Android 14)
 
-To change these in CI, add a step **after** `npx cap add android` in the workflow:
+### Check current values
+
+After `npx cap add android`, the values live in `android/variables.gradle`:
+
+```bash
+cat android/variables.gradle | grep -E 'minSdk|targetSdk'
+```
+
+### Change in CI workflow
+
+Add a step after `npx cap add android`:
 
 ```yaml
 - name: Set Android SDK versions
   working-directory: android
   run: |
-    sed -i 's/minSdkVersion = .*/minSdkVersion = 24/' variables.gradle
+    sed -i 's/minSdkVersion = .*/minSdkVersion = 26/' variables.gradle
     sed -i 's/targetSdkVersion = .*/targetSdkVersion = 35/' variables.gradle
 ```
 
 Common values:
-| minSdkVersion | Android Version | Coverage |
-|---------------|-----------------|----------|
-| 22 | 5.1 Lollipop | ~99% |
-| 24 | 7.0 Nougat | ~97% |
-| 26 | 8.0 Oreo | ~93% |
+
+| minSdkVersion | Android Version | Device coverage |
+| ------------- | --------------- | --------------- |
+| 22            | 5.1 Lollipop    | ~99%            |
+| 24            | 7.0 Nougat      | ~97%            |
+| 26            | 8.0 Oreo        | ~93%            |
+| 28            | 9.0 Pie         | ~85%            |
+
+---
+
+## App Version (versionCode & versionName)
+
+Versions are stored in `android-version.json` at the repo root:
+
+```json
+{ "versionCode": 1, "versionName": "1.0.0" }
+```
+
+- **versionCode** — integer, must increase with every Play Store upload.
+- **versionName** — human-readable string shown in device app info.
+
+The CI workflow reads this file and passes values to Gradle automatically.
+
+### Auto-increment (npm scripts)
+
+```bash
+npm run android:version         # versionCode +1 only
+npm run android:version:patch   # versionCode +1, patch (1.0.1)
+npm run android:version:minor   # versionCode +1, minor (1.1.0)
+npm run android:version:major   # versionCode +1, major (2.0.0)
+```
+
+### Manual update
+
+Open `android-version.json`, edit the values, commit and push to `main-android`.
+
+### Workflow
+
+```bash
+npm run android:version:patch
+git add android-version.json
+git commit -m "chore: bump android version"
+git push origin main-android
+```
+
+---
+
+## App Icon
+
+The icon is sourced from `public/expenzo.png`. During the CI build, ImageMagick resizes it to all required densities:
+
+| Density    | Size    | Location                    |
+| ---------- | ------- | --------------------------- |
+| mdpi       | 48×48   | mipmap-mdpi/                |
+| hdpi       | 72×72   | mipmap-hdpi/                |
+| xhdpi      | 96×96   | mipmap-xhdpi/               |
+| xxhdpi     | 144×144 | mipmap-xxhdpi/              |
+| xxxhdpi    | 192×192 | mipmap-xxxhdpi/             |
+| Play Store | 512×512 | releases/playstore-icon.png |
+
+To change the icon, replace `public/expenzo.png` with a square PNG (≥512×512 px) and push.
 
 ---
 
@@ -181,17 +247,19 @@ git push origin v1.0.0
 4. Complete the **Content rating** questionnaire.
 5. Set up **Pricing & distribution**.
 
-### Upload the APK
+### Upload the AAB (Play Store)
 
 1. Go to **Production → Create new release** (or use Internal/Closed testing first).
-2. Upload the signed `expenzo-release.apk`.
-3. Add release notes and submit for review.
+2. Upload the signed `expenzo-release.aab` (download from `releases/` folder in `main-android`).
+3. Use `releases/playstore-icon.png` as the store listing icon.
+4. Add release notes and submit for review.
 
 ### Subsequent updates
 
-1. Bump the version in `capacitor.config.ts` or let CI auto-increment.
-2. Push to `main-android` (or push a tag for a release).
-3. Download the new signed APK and upload it to Play Console.
+1. Run `npm run android:version:patch` (or minor/major as needed).
+2. Commit `android-version.json`.
+3. Push to `main-android` — CI builds and signs automatically.
+4. Download the new AAB from `releases/` and upload to Play Console.
 
 ### Play Store requirements
 
