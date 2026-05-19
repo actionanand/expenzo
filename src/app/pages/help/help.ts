@@ -535,8 +535,9 @@ type HelpTab = 'sheets' | 'android';
             <div class="alert alert-info">
               <span class="alert-icon">ℹ️</span>
               <div>
-                <strong>APK</strong> — install directly on a device (sideload).<br />
-                <strong>AAB</strong> — required for Play Store uploads.
+                <strong>APK</strong> (Android Package Kit) — install directly on a device
+                (sideload).<br />
+                <strong>AAB</strong> (Android App Bundle) — required for Play Store uploads.
               </div>
             </div>
           </section>
@@ -545,15 +546,16 @@ type HelpTab = 'sheets' | 'android';
           <section class="help-section">
             <h2 class="section-heading">App Version (versionCode & versionName)</h2>
             <p class="section-desc">
-              Versions are stored in <code>android-version.json</code> at the root of the repo.
+              Versions are stored in <code>android-version.json</code>. The CI
+              <strong>automatically increments versionCode on every build</strong> — you don't need
+              to do anything for it.
             </p>
             <div class="code-block">&#123; "versionCode": 1, "versionName": "1.0.0" &#125;</div>
             <p class="section-desc">
-              <strong>versionCode</strong> — an integer, must increase with every Play Store
-              upload.<br />
-              <strong>versionName</strong> — human-readable (shown in app info).
+              <strong>versionCode</strong> — auto-incremented by CI on each push.<br />
+              <strong>versionName</strong> — update manually for major/minor/patch releases.
             </p>
-            <h3 class="subsection-heading">Auto-increment (npm scripts)</h3>
+            <h3 class="subsection-heading">Bump versionName (when needed)</h3>
             <div class="table-wrap">
               <table class="info-table">
                 <thead>
@@ -564,35 +566,26 @@ type HelpTab = 'sheets' | 'android';
                 </thead>
                 <tbody>
                   <tr>
-                    <td><code>npm run android:version</code></td>
-                    <td>versionCode +1 only</td>
-                  </tr>
-                  <tr>
                     <td><code>npm run android:version:patch</code></td>
-                    <td>versionCode +1, patch (1.0.0 → 1.0.1)</td>
+                    <td>1.0.0 → 1.0.1</td>
                   </tr>
                   <tr>
                     <td><code>npm run android:version:minor</code></td>
-                    <td>versionCode +1, minor (1.0.0 → 1.1.0)</td>
+                    <td>1.0.0 → 1.1.0</td>
                   </tr>
                   <tr>
                     <td><code>npm run android:version:major</code></td>
-                    <td>versionCode +1, major (1.0.0 → 2.0.0)</td>
+                    <td>1.0.0 → 2.0.0</td>
                   </tr>
                 </tbody>
               </table>
             </div>
-            <h3 class="subsection-heading">Manual update</h3>
-            <p class="section-desc">
-              Open <code>android-version.json</code> and edit the values directly, then commit and
-              push to <code>main-android</code>.
-            </p>
             <div class="alert alert-info">
               <span class="alert-icon">ℹ️</span>
               <div>
-                Run <code>npm run android:version:patch</code>, commit
-                <code>android-version.json</code>, then push to <code>main-android</code>. The CI
-                reads this file and passes the values to Gradle automatically.
+                After running the command, commit <code>android-version.json</code> and push to
+                <code>main-android</code>. CI will auto-increment versionCode on top of the new
+                name.
               </div>
             </div>
           </section>
@@ -624,15 +617,18 @@ type HelpTab = 'sheets' | 'android';
                 </tbody>
               </table>
             </div>
+            <h3 class="subsection-heading">When a new Android version is released</h3>
             <p class="section-desc">
-              To change these, edit <code>android-version.json</code> or add a step in the workflow
-              after <em>Add Android platform</em>:
+              Google requires apps to target the latest SDK within ~12 months of release. Edit the
+              <em>"Patch build.gradle"</em> step in
+              <code>.github/workflows/android-build.yml</code>:
             </p>
             <div class="code-block">
-              # In .github/workflows/android-build.yml - name: Set Android SDK versions
-              working-directory: android run: | sed -i 's/minSdkVersion = .*/minSdkVersion = 26/'
-              variables.gradle sed -i 's/targetSdkVersion = .*/targetSdkVersion = 35/'
-              variables.gradle
+              sed -i 's/targetSdkVersion = .*/targetSdkVersion = 36/' variables.gradle
+            </div>
+            <p class="section-desc">To control minimum device support:</p>
+            <div class="code-block">
+              sed -i 's/minSdkVersion = .*/minSdkVersion = 26/' variables.gradle
             </div>
             <div class="table-wrap">
               <table class="info-table">
@@ -640,7 +636,7 @@ type HelpTab = 'sheets' | 'android';
                   <tr>
                     <th>minSdkVersion</th>
                     <th>Android</th>
-                    <th>Device coverage</th>
+                    <th>Coverage</th>
                   </tr>
                 </thead>
                 <tbody>
