@@ -14,6 +14,11 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/stockpile/stockpile').then((m) => m.Stockpile),
   },
   {
+    path: 'checklist',
+    canActivate: [authGuard],
+    loadComponent: () => import('./pages/checklist/checklist').then((m) => m.Checklist),
+  },
+  {
     path: 'help',
     loadComponent: () => import('./pages/help/help').then((m) => m.Help),
   },

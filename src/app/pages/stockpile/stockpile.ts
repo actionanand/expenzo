@@ -29,6 +29,12 @@ import { PullToRefresh } from '../../components/pull-to-refresh/pull-to-refresh'
           <p>{{ error() }}</p>
           <button type="button" (click)="loadItems()">Retry</button>
         </div>
+      } @else if (items().length === 0) {
+        <ul class="stockpile-list" role="list">
+          <li class="stockpile-item empty-state" role="status">
+            <p>No items in your stockpile yet.</p>
+          </li>
+        </ul>
       } @else {
         <ul class="stockpile-list" role="list">
           @for (item of items(); track item.sno) {
