@@ -547,14 +547,23 @@ type HelpTab = 'sheets' | 'android';
             <h2 class="section-heading">App Version (versionCode & versionName)</h2>
             <p class="section-desc">
               Versions are stored in <code>android-version.json</code>. The CI
-              <strong>automatically increments versionCode on every build</strong> — you don't need
-              to do anything for it.
+              <strong>automatically increments versionCode on every build</strong> and commits the
+              updated file to <code>main-android</code>.
             </p>
             <div class="code-block">&#123; "versionCode": 1, "versionName": "1.0.0" &#125;</div>
             <p class="section-desc">
-              <strong>versionCode</strong> — auto-incremented by CI on each push.<br />
-              <strong>versionName</strong> — update manually for major/minor/patch releases.
+              <strong>versionCode</strong> — auto-incremented by CI on each push to
+              <code>main-android</code>. On the <code>main</code> branch it stays at its initial
+              value — this is normal.<br />
+              <strong>versionName</strong> — update manually only when marking a new release.
             </p>
+            <div class="alert alert-info">
+              <span class="alert-icon">ℹ️</span>
+              <div>
+                You should <strong>never need to edit versionCode</strong>. If you do change it on
+                <code>main-android</code>, CI will increment from your new value on the next build.
+              </div>
+            </div>
             <h3 class="subsection-heading">Bump versionName (when needed)</h3>
             <div class="table-wrap">
               <table class="info-table">

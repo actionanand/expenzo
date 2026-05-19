@@ -1,18 +1,16 @@
 import { createReducer, on } from '@ngrx/store';
 
-import * as ThemeActions from './theme.actions';
+import { ThemeMode, setThemeMode } from './theme.actions';
 
 export interface ThemeState {
-  isDark: boolean;
+  mode: ThemeMode;
 }
 
 const initialState: ThemeState = {
-  isDark: false,
+  mode: 'auto',
 };
 
 export const themeReducer = createReducer(
   initialState,
-  on(ThemeActions.toggleTheme, (state) => ({ isDark: !state.isDark })),
-  on(ThemeActions.setDarkTheme, () => ({ isDark: true })),
-  on(ThemeActions.setLightTheme, () => ({ isDark: false })),
+  on(setThemeMode, (_state, { mode }) => ({ mode })),
 );

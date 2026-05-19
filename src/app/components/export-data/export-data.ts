@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, input } from '@angular/core';
+import { Component, ChangeDetectionStrategy, input, signal } from '@angular/core';
 
 import { CycleData, Transaction } from '../../models/expense.model';
 
@@ -10,13 +10,18 @@ import { CycleData, Transaction } from '../../models/expense.model';
       <div class="export-card">
         <h3 class="export-title">Export Data</h3>
         <div class="export-actions">
-          <button type="button" class="export-btn csv" (click)="exportCSV()">
+          <button
+            type="button"
+            class="export-btn csv"
+            [disabled]="exporting()"
+            (click)="exportCSV()"
+          >
             <span class="export-icon">📊</span>
-            Export CSV
+            {{ exporting() ? 'Saving...' : 'Export CSV' }}
           </button>
           <button type="button" class="export-btn pdf" (click)="exportPDF()">
             <span class="export-icon">📄</span>
-            Export PDF
+            Print / PDF
           </button>
         </div>
       </div>
@@ -26,6 +31,7 @@ import { CycleData, Transaction } from '../../models/expense.model';
 })
 export class ExportData {
   readonly cycle = input.required<CycleData>();
+  protected readonly exporting = signal(false);
 
   protected exportCSV(): void {
     const txs = this.cycle().transactions;
@@ -38,7 +44,23 @@ export class ExportData {
       })
       .join('\n');
     const csv = header + rows;
-    this.downloadFile(csv, `expenses-${this.cycle().label}.csv`, 'text/csv');
+    const filename = `expenses-${this.cycle().label}.csv`;
+    const blob = new Blob([csv], { type: 'text/csv' });
+
+    // Try Web Share API (works in Android WebView / Capacitor)
+    if (navigator.share && navigator.canShare?.({ files: [new File([blob], filename)] })) {
+      this.exporting.set(true);
+      const file = new File([blob], filename, { type: 'text/csv' });
+      navigator
+        .share({ files: [file], title: `Expenses - ${this.cycle().label}` })
+        .catch(() => {
+          // User cancelled share — fallback to download
+          this.downloadBlob(blob, filename);
+        })
+        .finally(() => this.exporting.set(false));
+    } else {
+      this.downloadBlob(blob, filename);
+    }
   }
 
   protected exportPDF(): void {
@@ -55,6 +77,7 @@ export class ExportData {
       th { background: #f5f5f5; font-weight: 600; }
       .summary { margin: 10px 0; }
       .summary span { margin-right: 20px; }
+      @media print { .no-print { display: none; } }
     </style></head><body>`;
     html += `<h1>Expense Report - ${cycle.label}</h1>`;
     html += `<div class="summary">`;
@@ -76,30 +99,28 @@ export class ExportData {
     }
     html += `</table></body></html>`;
 
-    this.printHtml(html);
+    this.printViaNewDocument(html);
   }
 
-  private printHtml(html: string): void {
-    // Use hidden iframe to avoid opening system browser in Capacitor/Android
-    const iframe = document.createElement('iframe');
-    iframe.style.position = 'fixed';
-    iframe.style.left = '-9999px';
-    iframe.style.width = '0';
-    iframe.style.height = '0';
-    document.body.appendChild(iframe);
+  private printViaNewDocument(html: string): void {
+    // Write HTML into the current document for printing (works in Capacitor WebView)
+    const originalContent = document.body.innerHTML;
+    const originalTitle = document.title;
 
-    const doc = iframe.contentDocument ?? iframe.contentWindow?.document;
-    if (doc) {
-      doc.open();
-      doc.write(html);
-      doc.close();
-      // Wait for content to render before printing
+    document.body.innerHTML = html;
+    document.title = 'Expenzo Report';
+
+    // Wait for render, then trigger print
+    setTimeout(() => {
+      window.print();
+      // Restore after print dialog
       setTimeout(() => {
-        iframe.contentWindow?.print();
-        // Clean up after print dialog closes
-        setTimeout(() => document.body.removeChild(iframe), 1000);
-      }, 300);
-    }
+        document.body.innerHTML = originalContent;
+        document.title = originalTitle;
+        // Force Angular to reattach — navigate to same route
+        window.location.reload();
+      }, 500);
+    }, 200);
   }
 
   private escapeHtml(str: string): string {
@@ -110,13 +131,14 @@ export class ExportData {
       .replace(/"/g, '&quot;');
   }
 
-  private downloadFile(content: string, filename: string, type: string): void {
-    const blob = new Blob([content], { type });
+  private downloadBlob(blob: Blob, filename: string): void {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
     a.download = filename;
+    document.body.appendChild(a);
     a.click();
+    document.body.removeChild(a);
     URL.revokeObjectURL(url);
   }
 }

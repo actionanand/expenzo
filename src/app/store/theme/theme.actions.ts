@@ -1,6 +1,6 @@
-import { createAction } from '@ngrx/store';
+import { createAction, props } from '@ngrx/store';
 
-export const toggleTheme = createAction('[Theme] Toggle');
-export const setDarkTheme = createAction('[Theme] Set Dark');
-export const setLightTheme = createAction('[Theme] Set Light');
+export type ThemeMode = 'auto' | 'light' | 'dark';
+
+export const setThemeMode = createAction('[Theme] Set Mode', props<{ mode: ThemeMode }>());
 export const initTheme = createAction('[Theme] Init');
