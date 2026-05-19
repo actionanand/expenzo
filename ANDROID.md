@@ -120,6 +120,41 @@ const config: CapacitorConfig = {
 
 ---
 
+## When a New Android Version Is Released
+
+When Google releases a new Android version (e.g. Android 16), you need to update `targetSdkVersion` to maintain Play Store compliance. Google typically requires apps to target the latest SDK within 12 months of release.
+
+### Steps
+
+1. Check the new version's API level at [developer.android.com/tools/releases/platforms](https://developer.android.com/tools/releases/platforms).
+
+2. Update the workflow step in `.github/workflows/android-build.yml` — find the "Patch build.gradle" step or add a new one after `npx cap add android`:
+
+   ```yaml
+   - name: Set Android SDK versions
+     working-directory: android
+     run: |
+       sed -i 's/targetSdkVersion = .*/targetSdkVersion = 36/' variables.gradle
+   ```
+
+3. Also update the Capacitor Android dependency in the workflow to a version that supports the new SDK:
+
+   ```yaml
+   npm install --no-save @capacitor/cli @capacitor/core @capacitor/android@latest
+   ```
+
+4. Push to `main-android` — CI will build with the new target.
+
+### Android API Level Reference
+
+| API Level | Android Version | Release Year |
+| --------- | --------------- | ------------ |
+| 34        | 14              | 2023         |
+| 35        | 15              | 2024         |
+| 36        | 16              | 2025 (est.)  |
+
+---
+
 ## Changing Supported Android Versions
 
 The default Capacitor Android project targets:
@@ -169,29 +204,29 @@ Versions are stored in `android-version.json` at the repo root:
 - **versionCode** — integer, must increase with every Play Store upload.
 - **versionName** — human-readable string shown in device app info.
 
-The CI workflow reads this file and passes values to Gradle automatically.
+The CI workflow **automatically increments `versionCode` on every build** and commits the updated file back to `main-android` before building.
 
 ### Auto-increment (npm scripts)
 
+Use these only when you also want to bump the human-readable **versionName** (semver):
+
 ```bash
-npm run android:version         # versionCode +1 only
-npm run android:version:patch   # versionCode +1, patch (1.0.1)
-npm run android:version:minor   # versionCode +1, minor (1.1.0)
-npm run android:version:major   # versionCode +1, major (2.0.0)
+npm run android:version:patch   # versionCode +1, patch (1.0.0 → 1.0.1)
+npm run android:version:minor   # versionCode +1, minor (1.0.0 → 1.1.0)
+npm run android:version:major   # versionCode +1, major (1.0.0 → 2.0.0)
+```
+
+Then commit and push:
+
+```bash
+git add android-version.json
+git commit -m "chore: bump android version to 1.1.0"
+git push origin main-android
 ```
 
 ### Manual update
 
-Open `android-version.json`, edit the values, commit and push to `main-android`.
-
-### Workflow
-
-```bash
-npm run android:version:patch
-git add android-version.json
-git commit -m "chore: bump android version"
-git push origin main-android
-```
+Open `android-version.json`, edit `versionName` (the CI handles `versionCode` automatically), commit and push to `main-android`.
 
 ---
 
