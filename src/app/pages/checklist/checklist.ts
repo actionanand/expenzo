@@ -4,6 +4,7 @@ import { RouterLink } from '@angular/router';
 import { ChecklistService } from '../../services/checklist.service';
 import { ChecklistGroup } from '../../models/checklist.model';
 import { PullToRefresh } from '../../components/pull-to-refresh/pull-to-refresh';
+import { CacheService } from '../../services/cache.service';
 
 @Component({
   selector: 'app-checklist',
@@ -16,7 +17,7 @@ import { PullToRefresh } from '../../components/pull-to-refresh/pull-to-refresh'
         <h1 class="checklist-title">Checklist</h1>
       </header>
 
-      <app-pull-to-refresh (refresh)="loadChecklists()" />
+      <app-pull-to-refresh (refresh)="loadChecklists(true)" />
 
       @if (loading()) {
         <div class="loading-state">
@@ -59,6 +60,7 @@ import { PullToRefresh } from '../../components/pull-to-refresh/pull-to-refresh'
 })
 export class Checklist implements OnInit {
   private readonly checklistService = inject(ChecklistService);
+  private readonly cache = inject(CacheService);
 
   protected readonly checklists = signal<ChecklistGroup[]>([]);
   protected readonly loading = signal(true);
@@ -68,17 +70,36 @@ export class Checklist implements OnInit {
     this.loadChecklists();
   }
 
-  protected loadChecklists(): void {
+  protected loadChecklists(forceRefresh = false): void {
+    const cacheKey = 'checklist';
+
+    if (!forceRefresh) {
+      const cached = this.cache.get<ChecklistGroup[]>(cacheKey);
+      if (cached) {
+        this.checklists.set(cached);
+        this.loading.set(false);
+        return;
+      }
+    }
+
     this.loading.set(true);
     this.error.set(null);
     this.checklistService.getChecklists().subscribe({
       next: (data) => {
+        this.cache.set(cacheKey, data);
         this.checklists.set(data);
         this.loading.set(false);
       },
       error: () => {
-        this.error.set('Failed to load checklists. Please try again.');
-        this.loading.set(false);
+        const offline = this.cache.getOffline<ChecklistGroup[]>(cacheKey);
+        if (offline) {
+          this.checklists.set(offline);
+          this.loading.set(false);
+          this.cache.showOfflineToast();
+        } else {
+          this.error.set('Failed to load checklists. Please try again.');
+          this.loading.set(false);
+        }
       },
     });
   }
