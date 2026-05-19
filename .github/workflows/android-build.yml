@@ -1,0 +1,109 @@
+name: Android APK Build
+
+on:
+  push:
+    branches:
+      - main-android
+
+permissions:
+  contents: write
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24.11.1'
+
+      - name: Setup Java (JDK 17)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install project dependencies
+        run: npm install
+
+      - name: Inject secrets into environment.ts
+        env:
+          PASSWORD_HASH: ${{ secrets.PASSWORD_HASH }}
+          TOKEN_HASH: ${{ secrets.TOKEN_HASH }}
+        run: |
+          sed -i "s|PASSWORD_HASH_PLACEHOLDER|$PASSWORD_HASH|g" src/environments/environment.ts
+          sed -i "s|TOKEN_PLACEHOLDER|$TOKEN_HASH|g" src/environments/environment.ts
+
+      - name: Build Angular app (production)
+        run: npm run build -- --configuration=production
+
+      - name: Install Capacitor CLI & Android platform
+        run: |
+          npm install --no-save @capacitor/cli @capacitor/core @capacitor/android
+
+      - name: Add Android platform
+        run: npx cap add android
+
+      - name: Sync web assets to Android
+        run: npx cap sync android
+
+      - name: Build APK with Gradle
+        working-directory: android
+        run: ./gradlew assembleRelease
+
+      - name: Decode keystore
+        if: env.KEYSTORE_BASE64 != ''
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: echo "$KEYSTORE_BASE64" | base64 -d > android/app/release-keystore.jks
+
+      - name: Sign APK
+        if: hashFiles('android/app/release-keystore.jks') != ''
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        working-directory: android
+        run: |
+          # Find the unsigned release APK
+          UNSIGNED_APK=$(find app/build -name "*-release-unsigned.apk" | head -1)
+          SIGNED_APK="app/build/outputs/apk/release/expenzo-release-signed.apk"
+          ALIGNED_APK="app/build/outputs/apk/release/expenzo-release.apk"
+
+          # Align
+          ${ANDROID_HOME}/build-tools/$(ls ${ANDROID_HOME}/build-tools/ | tail -1)/zipalign -v 4 \
+            "$UNSIGNED_APK" "$ALIGNED_APK"
+
+          # Sign
+          ${ANDROID_HOME}/build-tools/$(ls ${ANDROID_HOME}/build-tools/ | tail -1)/apksigner sign \
+            --ks app/release-keystore.jks \
+            --ks-pass "pass:$KEYSTORE_PASSWORD" \
+            --ks-key-alias "$KEY_ALIAS" \
+            --key-pass "pass:$KEY_PASSWORD" \
+            "$ALIGNED_APK"
+
+      - name: Rename unsigned APK (fallback if no keystore)
+        if: hashFiles('android/app/release-keystore.jks') == ''
+        run: |
+          UNSIGNED_APK=$(find android/app/build -name "*-release-unsigned.apk" | head -1)
+          cp "$UNSIGNED_APK" android/app/build/outputs/apk/release/expenzo-release.apk
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: expenzo-release-apk
+          path: android/app/build/outputs/apk/release/expenzo-release.apk
+          retention-days: 30
+
+      - name: Create GitHub Release (on tag push)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: android/app/build/outputs/apk/release/expenzo-release.apk
