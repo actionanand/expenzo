@@ -186,6 +186,43 @@ function sliceIntoCycles(
     });
   }
 
+  // Handle transactions that fall in the next cycle when its spreadsheet tab
+  // doesn't exist yet (e.g. today is May 30 but Jun tab hasn't been created).
+  // Find the chronologically latest API month and project the next cycle from it.
+  if (parsedMonths.length > 0) {
+    const latestPm = [...parsedMonths].sort((a, b) =>
+      a.year !== b.year ? a.year - b.year : a.month - b.month,
+    )[parsedMonths.length - 1];
+
+    const nextCycleFrom = new Date(latestPm.year, latestPm.month, startDay);
+    const nextCycleTo = new Date(latestPm.year, latestPm.month + 1, startDay - 1, 23, 59, 59, 999);
+    const nextCycleNextFrom = new Date(latestPm.year, latestPm.month + 1, startDay);
+
+    const remainingTxns = allTransactions.filter((t) => {
+      const d = new Date(t.date);
+      return d >= nextCycleFrom && d < nextCycleNextFrom;
+    });
+
+    if (remainingTxns.length > 0) {
+      const incomeKey = `${latestPm.year}-${latestPm.month}`;
+      const incomeSources = incomeByKey.get(incomeKey) ?? latestPm.income;
+      const categorySummary = recalculateCategorySummary(remainingTxns, categories);
+      const summary = recalculateSummary(remainingTxns, incomeSources);
+      const label = formatCycleLabel(nextCycleFrom, nextCycleTo);
+
+      cycles.push({
+        label,
+        cycleFrom: nextCycleFrom,
+        cycleTo: nextCycleTo,
+        transactionCount: remainingTxns.length,
+        incomeSources,
+        summary,
+        categorySummary,
+        transactions: remainingTxns,
+      });
+    }
+  }
+
   cycles.sort((a, b) => a.cycleFrom.getTime() - b.cycleFrom.getTime());
 
   return cycles;
