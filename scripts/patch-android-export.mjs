@@ -17,15 +17,12 @@ writeFileSync(
 
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.Typeface;
+import android.graphics.pdf.PdfDocument;
 import android.net.Uri;
-import android.os.Bundle;
-import android.os.CancellationSignal;
-import android.os.ParcelFileDescriptor;
-import android.print.PageRange;
-import android.print.PrintAttributes;
-import android.print.PrintDocumentAdapter;
-import android.webkit.WebView;
-import android.webkit.WebViewClient;
 
 import androidx.core.content.FileProvider;
 
@@ -38,9 +35,20 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 @CapacitorPlugin(name = "ExpenzoExport")
 public class ExpenzoExportPlugin extends Plugin {
+  private static final int PAGE_WIDTH = 595;
+  private static final int PAGE_HEIGHT = 842;
+  private static final int PAGE_MARGIN = 36;
+  private static final int TABLE_PADDING = 6;
+  private static final int TABLE_LINE_HEIGHT = 11;
+  private static final int TABLE_MIN_ROW_HEIGHT = 24;
 
   @PluginMethod
   public void exportText(PluginCall call) {
@@ -110,141 +118,297 @@ public class ExpenzoExportPlugin extends Plugin {
       }
 
       File outputFile = new File(exportDir, outputName);
-      renderHtmlToPdf(outputFile, title, content, new PdfCallback() {
-        @Override
-        public void onSuccess() {
-          try {
-            shareFile(outputFile, "application/pdf", title);
-            call.resolve();
-          } catch (ActivityNotFoundException ex) {
-            call.reject("No app can handle this PDF.");
-          } catch (Exception ex) {
-            call.reject("Unable to share PDF.");
-          }
-        }
-
-        @Override
-        public void onError(String message) {
-          call.reject(message);
-        }
-      });
+      writePdf(outputFile, title, content);
+      shareFile(outputFile, "application/pdf", title);
+      call.resolve();
+    } catch (ActivityNotFoundException ex) {
+      call.reject("No app can handle this PDF.");
     } catch (Exception ex) {
       call.reject("Unable to export PDF.");
     }
   }
 
-  private void renderHtmlToPdf(File outputFile, String title, String html, PdfCallback callback) {
-    getActivity().runOnUiThread(() -> {
-      WebView webView = new WebView(getContext());
-      webView.getSettings().setJavaScriptEnabled(false);
-      webView.setWebViewClient(new WebViewClient() {
-        private boolean rendered = false;
+  private void writePdf(File outputFile, String title, String content) throws Exception {
+    JSONObject report = new JSONObject(content);
+    PdfDocument document = new PdfDocument();
+    Paint titlePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    titlePaint.setColor(Color.rgb(46, 125, 50));
+    titlePaint.setTextSize(18);
+    titlePaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
 
-        @Override
-        public void onPageFinished(WebView view, String url) {
-          if (rendered) {
-            return;
-          }
-          rendered = true;
+    Paint headingPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    headingPaint.setColor(Color.rgb(34, 34, 34));
+    headingPaint.setTextSize(14);
+    headingPaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
 
-          PrintDocumentAdapter adapter = view.createPrintDocumentAdapter(title);
-          PrintAttributes attributes = new PrintAttributes.Builder()
-            .setMediaSize(PrintAttributes.MediaSize.ISO_A4)
-            .setResolution(new PrintAttributes.Resolution("pdf", "pdf", 300, 300))
-            .setMinMargins(PrintAttributes.Margins.NO_MARGINS)
-            .build();
+    Paint summaryPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    summaryPaint.setColor(Color.rgb(34, 34, 34));
+    summaryPaint.setTextSize(11);
 
-          ParcelFileDescriptor descriptor;
-          try {
-            descriptor = ParcelFileDescriptor.open(
-              outputFile,
-              ParcelFileDescriptor.MODE_CREATE
-                | ParcelFileDescriptor.MODE_TRUNCATE
-                | ParcelFileDescriptor.MODE_READ_WRITE
-            );
-          } catch (Exception ex) {
-            destroyWebView(view);
-            callback.onError("Unable to create PDF file.");
-            return;
-          }
+    Paint headerPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    headerPaint.setColor(Color.rgb(34, 34, 34));
+    headerPaint.setTextSize(9);
+    headerPaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
 
-          adapter.onLayout(
-            null,
-            attributes,
-            new CancellationSignal(),
-            new PrintDocumentAdapter.LayoutResultCallback() {
-              @Override
-              public void onLayoutFinished(android.print.PrintDocumentInfo info, boolean changed) {
-                adapter.onWrite(
-                  new PageRange[] { PageRange.ALL_PAGES },
-                  descriptor,
-                  new CancellationSignal(),
-                  new PrintDocumentAdapter.WriteResultCallback() {
-                    @Override
-                    public void onWriteFinished(PageRange[] pages) {
-                      closeQuietly(descriptor);
-                      destroyWebView(view);
-                      callback.onSuccess();
-                    }
+    Paint cellPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    cellPaint.setColor(Color.rgb(34, 34, 34));
+    cellPaint.setTextSize(8.5f);
 
-                    @Override
-                    public void onWriteFailed(CharSequence error) {
-                      closeQuietly(descriptor);
-                      destroyWebView(view);
-                      callback.onError("Unable to write PDF.");
-                    }
+    Paint borderPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    borderPaint.setColor(Color.rgb(221, 221, 221));
+    borderPaint.setStyle(Paint.Style.STROKE);
+    borderPaint.setStrokeWidth(1);
 
-                    @Override
-                    public void onWriteCancelled() {
-                      closeQuietly(descriptor);
-                      destroyWebView(view);
-                      callback.onError("PDF export was cancelled.");
-                    }
-                  }
-                );
-              }
+    Paint headerBackgroundPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    headerBackgroundPaint.setColor(Color.rgb(245, 245, 245));
+    headerBackgroundPaint.setStyle(Paint.Style.FILL);
 
-              @Override
-              public void onLayoutFailed(CharSequence error) {
-                closeQuietly(descriptor);
-                destroyWebView(view);
-                callback.onError("Unable to lay out PDF.");
-              }
+    PageState state = startPage(document, 1);
+    state.canvas.drawText(report.optString("title", title), PAGE_MARGIN, state.y, titlePaint);
+    state.y += 28;
 
-              @Override
-              public void onLayoutCancelled() {
-                closeQuietly(descriptor);
-                destroyWebView(view);
-                callback.onError("PDF export was cancelled.");
-              }
-            },
-            new Bundle()
-          );
-        }
-      });
-      webView.loadDataWithBaseURL(null, html, "text/html", "UTF-8", null);
-    });
-  }
+    drawSummary(document, state, report.optJSONArray("summary"), headingPaint, summaryPaint);
+    state.y += 8;
 
-  private void closeQuietly(ParcelFileDescriptor descriptor) {
-    try {
-      descriptor.close();
-    } catch (Exception ignored) {
-      // Already closed.
+    drawSectionTitle(document, state, "Category Breakdown", headingPaint);
+    drawTable(
+      document,
+      state,
+      new String[] { "Category", "Spent", "Budget" },
+      new String[] { "category", "spent", "budget" },
+      new float[] { 245, 139, 139 },
+      report.optJSONArray("categories"),
+      headerPaint,
+      cellPaint,
+      borderPaint,
+      headerBackgroundPaint
+    );
+
+    state.y += 14;
+    drawSectionTitle(document, state, "Transactions", headingPaint);
+    drawTable(
+      document,
+      state,
+      new String[] { "Date", "Name", "Category", "Amount" },
+      new String[] { "date", "name", "category", "amount" },
+      new float[] { 68, 210, 125, 120 },
+      report.optJSONArray("transactions"),
+      headerPaint,
+      cellPaint,
+      borderPaint,
+      headerBackgroundPaint
+    );
+
+    document.finishPage(state.page);
+    try (FileOutputStream output = new FileOutputStream(outputFile, false)) {
+      document.writeTo(output);
+    } finally {
+      document.close();
     }
   }
 
-  private void destroyWebView(WebView webView) {
-    try {
-      webView.destroy();
-    } catch (Exception ignored) {
-      // WebView cleanup is best-effort after PDF generation.
+  private PageState startPage(PdfDocument document, int pageNumber) {
+    PdfDocument.PageInfo pageInfo = new PdfDocument.PageInfo.Builder(
+      PAGE_WIDTH,
+      PAGE_HEIGHT,
+      pageNumber
+    ).create();
+    PageState state = new PageState();
+    state.page = document.startPage(pageInfo);
+    state.canvas = state.page.getCanvas();
+    state.pageNumber = pageNumber;
+    state.y = PAGE_MARGIN;
+    return state;
+  }
+
+  private void startNextPage(PdfDocument document, PageState state) {
+    document.finishPage(state.page);
+    PageState next = startPage(document, state.pageNumber + 1);
+    state.page = next.page;
+    state.canvas = next.canvas;
+    state.pageNumber = next.pageNumber;
+    state.y = next.y;
+  }
+
+  private void ensureSpace(PdfDocument document, PageState state, int height) {
+    if (state.y + height > PAGE_HEIGHT - PAGE_MARGIN) {
+      startNextPage(document, state);
     }
   }
 
-  private interface PdfCallback {
-    void onSuccess();
-    void onError(String message);
+  private void drawSummary(
+    PdfDocument document,
+    PageState state,
+    JSONArray summary,
+    Paint headingPaint,
+    Paint summaryPaint
+  ) {
+    ensureSpace(document, state, 48);
+    state.canvas.drawText("Summary", PAGE_MARGIN, state.y, headingPaint);
+    state.y += 20;
+
+    if (summary == null || summary.length() == 0) {
+      return;
+    }
+
+    int x = PAGE_MARGIN;
+    for (int index = 0; index < summary.length(); index++) {
+      JSONObject item = summary.optJSONObject(index);
+      if (item == null) continue;
+      String text = item.optString("label") + ": " + item.optString("value");
+      state.canvas.drawText(text, x, state.y, summaryPaint);
+      x += Math.round(summaryPaint.measureText(text)) + 24;
+      if (x > PAGE_WIDTH - PAGE_MARGIN - 120) {
+        x = PAGE_MARGIN;
+        state.y += 16;
+      }
+    }
+    state.y += 18;
+  }
+
+  private void drawSectionTitle(
+    PdfDocument document,
+    PageState state,
+    String title,
+    Paint headingPaint
+  ) {
+    ensureSpace(document, state, 42);
+    state.canvas.drawText(title, PAGE_MARGIN, state.y, headingPaint);
+    state.y += 14;
+  }
+
+  private void drawTable(
+    PdfDocument document,
+    PageState state,
+    String[] headers,
+    String[] keys,
+    float[] widths,
+    JSONArray rows,
+    Paint headerPaint,
+    Paint cellPaint,
+    Paint borderPaint,
+    Paint headerBackgroundPaint
+  ) {
+    drawRow(state, headers, widths, headerPaint, borderPaint, headerBackgroundPaint);
+
+    if (rows == null || rows.length() == 0) {
+      return;
+    }
+
+    for (int rowIndex = 0; rowIndex < rows.length(); rowIndex++) {
+      JSONObject row = rows.optJSONObject(rowIndex);
+      String[] cells = new String[keys.length];
+      for (int cellIndex = 0; cellIndex < keys.length; cellIndex++) {
+        cells[cellIndex] = row == null ? "" : row.optString(keys[cellIndex], "");
+      }
+
+      int rowHeight = measureRowHeight(cells, widths, cellPaint);
+      if (state.y + rowHeight > PAGE_HEIGHT - PAGE_MARGIN) {
+        startNextPage(document, state);
+        drawRow(state, headers, widths, headerPaint, borderPaint, headerBackgroundPaint);
+      }
+
+      drawRow(state, cells, widths, cellPaint, borderPaint, null);
+    }
+  }
+
+  private int measureRowHeight(String[] cells, float[] widths, Paint paint) {
+    int maxLines = 1;
+    for (int index = 0; index < cells.length; index++) {
+      List<String> lines = wrapText(cells[index], paint, widths[index] - (TABLE_PADDING * 2));
+      maxLines = Math.max(maxLines, lines.size());
+    }
+    return Math.max(TABLE_MIN_ROW_HEIGHT, (maxLines * TABLE_LINE_HEIGHT) + (TABLE_PADDING * 2));
+  }
+
+  private void drawRow(
+    PageState state,
+    String[] cells,
+    float[] widths,
+    Paint textPaint,
+    Paint borderPaint,
+    Paint backgroundPaint
+  ) {
+    int rowHeight = measureRowHeight(cells, widths, textPaint);
+    float x = PAGE_MARGIN;
+    int top = state.y;
+
+    for (int index = 0; index < cells.length; index++) {
+      float right = x + widths[index];
+      if (backgroundPaint != null) {
+        state.canvas.drawRect(x, top, right, top + rowHeight, backgroundPaint);
+      }
+      state.canvas.drawRect(x, top, right, top + rowHeight, borderPaint);
+
+      List<String> lines = wrapText(cells[index], textPaint, widths[index] - (TABLE_PADDING * 2));
+      float baseline = top + TABLE_PADDING - textPaint.ascent();
+      for (String line : lines) {
+        state.canvas.drawText(line, x + TABLE_PADDING, baseline, textPaint);
+        baseline += TABLE_LINE_HEIGHT;
+      }
+      x = right;
+    }
+
+    state.y += rowHeight;
+  }
+
+  private List<String> wrapText(String text, Paint paint, float maxWidth) {
+    List<String> lines = new ArrayList<>();
+    String safeText = text == null ? "" : text.trim();
+    if (safeText.isEmpty()) {
+      lines.add("");
+      return lines;
+    }
+
+    StringBuilder current = new StringBuilder();
+    for (String word : safeText.split("\\\\s+")) {
+      String next = current.length() == 0 ? word : current + " " + word;
+      if (paint.measureText(next) <= maxWidth) {
+        current.setLength(0);
+        current.append(next);
+        continue;
+      }
+
+      if (current.length() > 0) {
+        lines.add(current.toString());
+        current.setLength(0);
+      }
+
+      if (paint.measureText(word) <= maxWidth) {
+        current.append(word);
+      } else {
+        lines.addAll(breakLongWord(word, paint, maxWidth));
+      }
+    }
+
+    if (current.length() > 0) {
+      lines.add(current.toString());
+    }
+    return lines;
+  }
+
+  private List<String> breakLongWord(String word, Paint paint, float maxWidth) {
+    List<String> parts = new ArrayList<>();
+    StringBuilder current = new StringBuilder();
+    for (int index = 0; index < word.length(); index++) {
+      String next = current.toString() + word.charAt(index);
+      if (paint.measureText(next) > maxWidth && current.length() > 0) {
+        parts.add(current.toString());
+        current.setLength(0);
+      }
+      current.append(word.charAt(index));
+    }
+    if (current.length() > 0) {
+      parts.add(current.toString());
+    }
+    return parts;
+  }
+
+  private static class PageState {
+    PdfDocument.Page page;
+    Canvas canvas;
+    int pageNumber;
+    int y;
   }
 
   private void shareFile(File file, String mimeType, String title) {
