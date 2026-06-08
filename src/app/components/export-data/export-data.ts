@@ -128,7 +128,7 @@ export class ExportData {
     if (this.isAndroid()) {
       this.tryAndroidPdfExport({
         filename: `expenzo-report-${this.cycle().label}.pdf`,
-        content: html,
+        content: this.buildAndroidReportPayload(),
         title: `Expenzo Report - ${this.cycle().label}`,
       })
         .then((handled) => {
@@ -334,6 +334,36 @@ export class ExportData {
     }
     h += `</table></body></html>`;
     return h;
+  }
+
+  private buildAndroidReportPayload(): string {
+    const cycle = this.cycle();
+    return JSON.stringify({
+      title: `Expenzo Report - ${cycle.label}`,
+      summary: [
+        { label: 'Income', value: this.formatCurrency(cycle.summary.totalIncome) },
+        { label: 'Expense', value: this.formatCurrency(cycle.summary.totalExpense) },
+        { label: 'Savings', value: this.formatCurrency(cycle.summary.savings) },
+      ],
+      categories: cycle.categorySummary.map((cat) => ({
+        category: cat.category,
+        spent: this.formatCurrency(cat.spent),
+        budget: this.formatCurrency(cat.limit),
+      })),
+      transactions: cycle.transactions.map((tx) => {
+        const date = new Date(tx.date).toLocaleDateString('en-IN');
+        return {
+          date,
+          name: tx.name,
+          category: tx.category,
+          amount: this.formatCurrency(tx.price),
+        };
+      }),
+    });
+  }
+
+  private formatCurrency(value: number): string {
+    return `INR ${value.toLocaleString('en-IN')}`;
   }
 
   private esc(str: string): string {
