@@ -128,7 +128,7 @@ export class ExportData {
     if (this.isAndroid()) {
       this.tryAndroidPdfExport({
         filename: `expenzo-report-${this.cycle().label}.pdf`,
-        content: this.buildReportText(),
+        content: html,
         title: `Expenzo Report - ${this.cycle().label}`,
       })
         .then((handled) => {
@@ -303,6 +303,8 @@ export class ExportData {
     let h = `<!DOCTYPE html><html><head><meta charset="utf-8">`;
     h += `<title>Expenzo – ${this.esc(cycle.label)}</title>`;
     h += `<style>
+      @page{size:A4;margin:14mm}
+      *{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}
       body{font-family:system-ui,sans-serif;padding:20px;font-size:12px;color:#222}
       h1{color:#2e7d32;font-size:18px}
       h2{font-size:14px;margin-top:20px}
@@ -332,36 +334,6 @@ export class ExportData {
     }
     h += `</table></body></html>`;
     return h;
-  }
-
-  private buildReportText(): string {
-    const cycle = this.cycle();
-    const lines = [
-      'Summary',
-      `Income: ${this.formatCurrency(cycle.summary.totalIncome)}`,
-      `Expense: ${this.formatCurrency(cycle.summary.totalExpense)}`,
-      `Savings: ${this.formatCurrency(cycle.summary.savings)}`,
-      '',
-      'Category Breakdown',
-      'Category | Spent | Budget',
-      ...cycle.categorySummary.map(
-        (cat) =>
-          `${cat.category} | ${this.formatCurrency(cat.spent)} | ${this.formatCurrency(cat.limit)}`,
-      ),
-      '',
-      'Transactions',
-      'Date | Name | Category | Amount',
-      ...cycle.transactions.map((tx) => {
-        const date = new Date(tx.date).toLocaleDateString('en-IN');
-        return `${date} | ${tx.name} | ${tx.category} | ${this.formatCurrency(tx.price)}`;
-      }),
-    ];
-
-    return lines.join('\n');
-  }
-
-  private formatCurrency(value: number): string {
-    return `INR ${value.toLocaleString('en-IN')}`;
   }
 
   private esc(str: string): string {
