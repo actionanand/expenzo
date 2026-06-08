@@ -2,6 +2,31 @@ import { Component, ChangeDetectionStrategy, input, signal } from '@angular/core
 
 import { CycleData, Transaction } from '../../models/expense.model';
 
+interface AndroidExportOptions {
+  filename: string;
+  content: string;
+  mimeType: string;
+  title: string;
+}
+
+interface AndroidExportPlugin {
+  exportText(options: AndroidExportOptions): Promise<void>;
+}
+
+interface CapacitorBridge {
+  getPlatform?: () => string;
+  isNativePlatform?: () => boolean;
+  Plugins?: {
+    ExpenzoExport?: AndroidExportPlugin;
+  };
+}
+
+declare global {
+  interface Window {
+    Capacitor?: CapacitorBridge;
+  }
+}
+
 @Component({
   selector: 'app-export-data',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -53,6 +78,25 @@ export class ExportData {
     const filename = `expenses-${this.cycle().label}.csv`;
     const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' });
 
+    if (this.isAndroid()) {
+      this.tryAndroidExport({
+        filename,
+        content: '\uFEFF' + csv,
+        mimeType: 'text/csv',
+        title: `Expenzo CSV - ${this.cycle().label}`,
+      })
+        .then((handled) => {
+          if (handled) return;
+          return this.tryShareFile(blob, filename).then((shared) => {
+            if (shared) return;
+            this.triggerDownload(blob, filename);
+          });
+        })
+        .catch(() => this.showToast('Export failed', true))
+        .finally(() => this.busy.set(false));
+      return;
+    }
+
     this.tryShareFile(blob, filename)
       .then((shared) => {
         if (shared) return;
@@ -80,6 +124,25 @@ export class ExportData {
     const filename = `expenzo-report-${this.cycle().label}.html`;
     const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
 
+    if (this.isAndroid()) {
+      this.tryAndroidExport({
+        filename,
+        content: html,
+        mimeType: 'text/html',
+        title: `Expenzo Report - ${this.cycle().label}`,
+      })
+        .then((handled) => {
+          if (handled) return;
+          return this.tryShareFile(blob, filename).then((shared) => {
+            if (shared) return;
+            this.printViaIframe(html);
+          });
+        })
+        .catch(() => this.showToast('Export failed', true))
+        .finally(() => this.busy.set(false));
+      return;
+    }
+
     this.tryShareFile(blob, filename)
       .then((shared) => {
         if (shared) return;
@@ -93,6 +156,23 @@ export class ExportData {
   }
 
   // ── Share / Download helpers ──
+
+  private isAndroid(): boolean {
+    const capacitor = window.Capacitor;
+    return capacitor?.isNativePlatform?.() === true && capacitor.getPlatform?.() === 'android';
+  }
+
+  private tryAndroidExport(options: AndroidExportOptions): Promise<boolean> {
+    const plugin = window.Capacitor?.Plugins?.ExpenzoExport;
+    if (!plugin) {
+      return Promise.resolve(false);
+    }
+
+    return plugin.exportText(options).then(() => {
+      this.showToast('Choose an app to save or share');
+      return true;
+    });
+  }
 
   /**
    * Try the Web Share API with a file.
