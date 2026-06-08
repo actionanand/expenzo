@@ -11,6 +11,7 @@ interface AndroidExportOptions {
 
 interface AndroidExportPlugin {
   exportText(options: AndroidExportOptions): Promise<void>;
+  exportPdf(options: Omit<AndroidExportOptions, 'mimeType'>): Promise<void>;
 }
 
 interface CapacitorBridge {
@@ -125,10 +126,9 @@ export class ExportData {
     const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
 
     if (this.isAndroid()) {
-      this.tryAndroidExport({
-        filename,
-        content: html,
-        mimeType: 'text/html',
+      this.tryAndroidPdfExport({
+        filename: `expenzo-report-${this.cycle().label}.pdf`,
+        content: this.buildReportText(),
         title: `Expenzo Report - ${this.cycle().label}`,
       })
         .then((handled) => {
@@ -169,6 +169,18 @@ export class ExportData {
     }
 
     return plugin.exportText(options).then(() => {
+      this.showToast('Choose an app to save or share');
+      return true;
+    });
+  }
+
+  private tryAndroidPdfExport(options: Omit<AndroidExportOptions, 'mimeType'>): Promise<boolean> {
+    const plugin = window.Capacitor?.Plugins?.ExpenzoExport;
+    if (!plugin) {
+      return Promise.resolve(false);
+    }
+
+    return plugin.exportPdf(options).then(() => {
       this.showToast('Choose an app to save or share');
       return true;
     });
@@ -320,6 +332,36 @@ export class ExportData {
     }
     h += `</table></body></html>`;
     return h;
+  }
+
+  private buildReportText(): string {
+    const cycle = this.cycle();
+    const lines = [
+      'Summary',
+      `Income: ${this.formatCurrency(cycle.summary.totalIncome)}`,
+      `Expense: ${this.formatCurrency(cycle.summary.totalExpense)}`,
+      `Savings: ${this.formatCurrency(cycle.summary.savings)}`,
+      '',
+      'Category Breakdown',
+      'Category | Spent | Budget',
+      ...cycle.categorySummary.map(
+        (cat) =>
+          `${cat.category} | ${this.formatCurrency(cat.spent)} | ${this.formatCurrency(cat.limit)}`,
+      ),
+      '',
+      'Transactions',
+      'Date | Name | Category | Amount',
+      ...cycle.transactions.map((tx) => {
+        const date = new Date(tx.date).toLocaleDateString('en-IN');
+        return `${date} | ${tx.name} | ${tx.category} | ${this.formatCurrency(tx.price)}`;
+      }),
+    ];
+
+    return lines.join('\n');
+  }
+
+  private formatCurrency(value: number): string {
+    return `INR ${value.toLocaleString('en-IN')}`;
   }
 
   private esc(str: string): string {
