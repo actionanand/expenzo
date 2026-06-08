@@ -59,6 +59,9 @@ jobs:
       - name: Add Android platform
         run: npx cap add android
 
+      - name: Patch Android export support
+        run: node scripts/patch-android-export.mjs
+
       - name: Patch build.gradle to accept version properties
         working-directory: android/app
         run: |
