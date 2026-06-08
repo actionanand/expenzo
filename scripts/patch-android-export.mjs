@@ -17,12 +17,15 @@ writeFileSync(
 
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
-import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Paint;
-import android.graphics.Typeface;
-import android.graphics.pdf.PdfDocument;
 import android.net.Uri;
+import android.os.Bundle;
+import android.os.CancellationSignal;
+import android.os.ParcelFileDescriptor;
+import android.print.PageRange;
+import android.print.PrintAttributes;
+import android.print.PrintDocumentAdapter;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
 
 import androidx.core.content.FileProvider;
 
@@ -35,14 +38,9 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
 
 @CapacitorPlugin(name = "ExpenzoExport")
 public class ExpenzoExportPlugin extends Plugin {
-  private static final int PAGE_WIDTH = 595;
-  private static final int PAGE_HEIGHT = 842;
-  private static final int PAGE_MARGIN = 36;
 
   @PluginMethod
   public void exportText(PluginCall call) {
@@ -112,127 +110,141 @@ public class ExpenzoExportPlugin extends Plugin {
       }
 
       File outputFile = new File(exportDir, outputName);
-      writePdf(outputFile, title, content);
-      shareFile(outputFile, "application/pdf", title);
-      call.resolve();
-    } catch (ActivityNotFoundException ex) {
-      call.reject("No app can handle this PDF.");
+      renderHtmlToPdf(outputFile, title, content, new PdfCallback() {
+        @Override
+        public void onSuccess() {
+          try {
+            shareFile(outputFile, "application/pdf", title);
+            call.resolve();
+          } catch (ActivityNotFoundException ex) {
+            call.reject("No app can handle this PDF.");
+          } catch (Exception ex) {
+            call.reject("Unable to share PDF.");
+          }
+        }
+
+        @Override
+        public void onError(String message) {
+          call.reject(message);
+        }
+      });
     } catch (Exception ex) {
       call.reject("Unable to export PDF.");
     }
   }
 
-  private void writePdf(File outputFile, String title, String content) throws Exception {
-    PdfDocument document = new PdfDocument();
-    Paint titlePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-    titlePaint.setColor(Color.rgb(46, 125, 50));
-    titlePaint.setTextSize(18);
-    titlePaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
+  private void renderHtmlToPdf(File outputFile, String title, String html, PdfCallback callback) {
+    getActivity().runOnUiThread(() -> {
+      WebView webView = new WebView(getContext());
+      webView.getSettings().setJavaScriptEnabled(false);
+      webView.setWebViewClient(new WebViewClient() {
+        private boolean rendered = false;
 
-    Paint bodyPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-    bodyPaint.setColor(Color.rgb(34, 34, 34));
-    bodyPaint.setTextSize(10);
-    bodyPaint.setTypeface(Typeface.MONOSPACE);
+        @Override
+        public void onPageFinished(WebView view, String url) {
+          if (rendered) {
+            return;
+          }
+          rendered = true;
 
-    int pageNumber = 1;
-    PdfDocument.Page page = startPage(document, pageNumber);
-    Canvas canvas = page.getCanvas();
-    int y = PAGE_MARGIN;
+          PrintDocumentAdapter adapter = view.createPrintDocumentAdapter(title);
+          PrintAttributes attributes = new PrintAttributes.Builder()
+            .setMediaSize(PrintAttributes.MediaSize.ISO_A4)
+            .setResolution(new PrintAttributes.Resolution("pdf", "pdf", 300, 300))
+            .setMinMargins(PrintAttributes.Margins.NO_MARGINS)
+            .build();
 
-    canvas.drawText(title, PAGE_MARGIN, y, titlePaint);
-    y += 26;
+          ParcelFileDescriptor descriptor;
+          try {
+            descriptor = ParcelFileDescriptor.open(
+              outputFile,
+              ParcelFileDescriptor.MODE_CREATE
+                | ParcelFileDescriptor.MODE_TRUNCATE
+                | ParcelFileDescriptor.MODE_READ_WRITE
+            );
+          } catch (Exception ex) {
+            destroyWebView(view);
+            callback.onError("Unable to create PDF file.");
+            return;
+          }
 
-    for (String rawLine : content.split("\\\\r?\\\\n", -1)) {
-      List<String> wrappedLines = wrapLine(rawLine, bodyPaint, PAGE_WIDTH - (PAGE_MARGIN * 2));
-      if (wrappedLines.isEmpty()) {
-        y += 12;
-        if (y > PAGE_HEIGHT - PAGE_MARGIN) {
-          document.finishPage(page);
-          page = startPage(document, ++pageNumber);
-          canvas = page.getCanvas();
-          y = PAGE_MARGIN;
+          adapter.onLayout(
+            null,
+            attributes,
+            new CancellationSignal(),
+            new PrintDocumentAdapter.LayoutResultCallback() {
+              @Override
+              public void onLayoutFinished(android.print.PrintDocumentInfo info, boolean changed) {
+                adapter.onWrite(
+                  new PageRange[] { PageRange.ALL_PAGES },
+                  descriptor,
+                  new CancellationSignal(),
+                  new PrintDocumentAdapter.WriteResultCallback() {
+                    @Override
+                    public void onWriteFinished(PageRange[] pages) {
+                      closeQuietly(descriptor);
+                      destroyWebView(view);
+                      callback.onSuccess();
+                    }
+
+                    @Override
+                    public void onWriteFailed(CharSequence error) {
+                      closeQuietly(descriptor);
+                      destroyWebView(view);
+                      callback.onError("Unable to write PDF.");
+                    }
+
+                    @Override
+                    public void onWriteCancelled() {
+                      closeQuietly(descriptor);
+                      destroyWebView(view);
+                      callback.onError("PDF export was cancelled.");
+                    }
+                  }
+                );
+              }
+
+              @Override
+              public void onLayoutFailed(CharSequence error) {
+                closeQuietly(descriptor);
+                destroyWebView(view);
+                callback.onError("Unable to lay out PDF.");
+              }
+
+              @Override
+              public void onLayoutCancelled() {
+                closeQuietly(descriptor);
+                destroyWebView(view);
+                callback.onError("PDF export was cancelled.");
+              }
+            },
+            new Bundle()
+          );
         }
-        continue;
-      }
+      });
+      webView.loadDataWithBaseURL(null, html, "text/html", "UTF-8", null);
+    });
+  }
 
-      for (String line : wrappedLines) {
-        if (y > PAGE_HEIGHT - PAGE_MARGIN) {
-          document.finishPage(page);
-          page = startPage(document, ++pageNumber);
-          canvas = page.getCanvas();
-          y = PAGE_MARGIN;
-        }
-        canvas.drawText(line, PAGE_MARGIN, y, bodyPaint);
-        y += 14;
-      }
-    }
-
-    document.finishPage(page);
-    try (FileOutputStream output = new FileOutputStream(outputFile, false)) {
-      document.writeTo(output);
-    } finally {
-      document.close();
+  private void closeQuietly(ParcelFileDescriptor descriptor) {
+    try {
+      descriptor.close();
+    } catch (Exception ignored) {
+      // Already closed.
     }
   }
 
-  private PdfDocument.Page startPage(PdfDocument document, int pageNumber) {
-    PdfDocument.PageInfo pageInfo = new PdfDocument.PageInfo.Builder(
-      PAGE_WIDTH,
-      PAGE_HEIGHT,
-      pageNumber
-    ).create();
-    return document.startPage(pageInfo);
+  private void destroyWebView(WebView webView) {
+    try {
+      webView.destroy();
+    } catch (Exception ignored) {
+      // WebView cleanup is best-effort after PDF generation.
+    }
   }
 
-  private List<String> wrapLine(String rawLine, Paint paint, int maxWidth) {
-    List<String> lines = new ArrayList<>();
-    String line = rawLine == null ? "" : rawLine.trim();
-    if (line.isEmpty()) {
-      return lines;
-    }
-
-    StringBuilder current = new StringBuilder();
-    for (String word : line.split("\\\\s+")) {
-      String next = current.length() == 0 ? word : current + " " + word;
-      if (paint.measureText(next) <= maxWidth) {
-        current.setLength(0);
-        current.append(next);
-        continue;
-      }
-
-      if (current.length() > 0) {
-        lines.add(current.toString());
-        current.setLength(0);
-      }
-
-      if (paint.measureText(word) <= maxWidth) {
-        current.append(word);
-      } else {
-        lines.addAll(breakLongWord(word, paint, maxWidth));
-      }
-    }
-
-    if (current.length() > 0) {
-      lines.add(current.toString());
-    }
-    return lines;
-  }
-
-  private List<String> breakLongWord(String word, Paint paint, int maxWidth) {
-    List<String> parts = new ArrayList<>();
-    StringBuilder current = new StringBuilder();
-    for (int index = 0; index < word.length(); index++) {
-      String next = current.toString() + word.charAt(index);
-      if (paint.measureText(next) > maxWidth && current.length() > 0) {
-        parts.add(current.toString());
-        current.setLength(0);
-      }
-      current.append(word.charAt(index));
-    }
-    if (current.length() > 0) {
-      parts.add(current.toString());
-    }
-    return parts;
+  private interface PdfCallback {
+    void onSuccess();
+    void onError(String message);
   }
 
   private void shareFile(File file, String mimeType, String title) {
