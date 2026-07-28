@@ -15,7 +15,8 @@
   font-size: 1.25rem;
   font-weight: 700;
   color: var(--color-primary);
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
+  text-decoration: none;
 }
 
 .header-actions {
@@ -32,15 +33,51 @@
   height: 2rem;
   border-radius: 50%;
   text-decoration: none;
-  font-size: 1rem;
+  color: var(--color-text-secondary);
   transition: background 0.15s ease;
 
   &:hover {
     background: var(--color-surface-variant);
+    color: var(--color-primary);
   }
 
   &:focus-visible {
     outline: 2px solid var(--color-primary);
     outline-offset: 2px;
+  }
+
+  svg {
+    width: 1.05rem;
+    height: 1.05rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .app-header {
+    padding: 0.65rem 0.75rem;
+  }
+
+  .app-title {
+    font-size: 1.1rem;
+  }
+
+  .header-actions {
+    gap: 0.1rem;
+  }
+
+  .nav-link {
+    width: 1.75rem;
+    height: 1.75rem;
+
+    svg {
+      width: 1rem;
+      height: 1rem;
+    }
+  }
+}
+
+@media (max-width: 360px) {
+  .nav-link:nth-child(3) {
+    display: none;
   }
 }

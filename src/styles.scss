@@ -11,6 +11,7 @@
 :root,
 [data-theme='light'] {
   --color-primary: #2e7d32;
+  --color-on-primary: #fff;
   --color-primary-light: #4caf50;
   --color-primary-dark: #1b5e20;
   --color-primary-surface: #e8f5e9;
@@ -37,6 +38,7 @@
 
 [data-theme='dark'] {
   --color-primary: #81c784;
+  --color-on-primary: #102312;
   --color-primary-light: #a5d6a7;
   --color-primary-dark: #4caf50;
   --color-primary-surface: #1b3a1b;

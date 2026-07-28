@@ -1,6 +1,7 @@
-import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
-import { Store } from '@ngrx/store';
 import { AsyncPipe } from '@angular/common';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { LucideDynamicIcon } from '@lucide/angular';
+import { Store } from '@ngrx/store';
 
 import { setThemeMode, ThemeMode } from '../../store/theme/theme.actions';
 import { selectThemeMode } from '../../store/theme/theme.selectors';
@@ -8,21 +9,21 @@ import { selectThemeMode } from '../../store/theme/theme.selectors';
 const MODE_CYCLE: ThemeMode[] = ['auto', 'light', 'dark'];
 
 const MODE_LABELS: Record<ThemeMode, string> = {
-  auto: 'Auto (system)',
+  auto: 'Auto theme (follows system)',
   light: 'Light theme',
   dark: 'Dark theme',
 };
 
 const MODE_ICONS: Record<ThemeMode, string> = {
-  auto: '🌗',
-  light: '☀️',
-  dark: '🌙',
+  auto: 'monitor-cog',
+  light: 'sun',
+  dark: 'moon-star',
 };
 
 @Component({
   selector: 'app-theme-toggle',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [AsyncPipe],
+  imports: [AsyncPipe, LucideDynamicIcon],
   template: `
     @if (themeMode$ | async; as mode) {
       <button
@@ -32,7 +33,7 @@ const MODE_ICONS: Record<ThemeMode, string> = {
         [attr.title]="labels[mode]"
         type="button"
       >
-        <span class="toggle-icon" aria-hidden="true">{{ icons[mode] }}</span>
+        <svg class="toggle-icon" [lucideIcon]="icons[mode]" aria-hidden="true"></svg>
       </button>
     }
   `,
@@ -40,13 +41,14 @@ const MODE_ICONS: Record<ThemeMode, string> = {
 })
 export class ThemeToggle {
   private readonly store = inject(Store);
+
   protected readonly themeMode$ = this.store.select(selectThemeMode);
   protected readonly labels = MODE_LABELS;
   protected readonly icons = MODE_ICONS;
 
   protected cycleTheme(current: ThemeMode): void {
-    const idx = MODE_CYCLE.indexOf(current);
-    const next = MODE_CYCLE[(idx + 1) % MODE_CYCLE.length];
+    const index = MODE_CYCLE.indexOf(current);
+    const next = MODE_CYCLE[(index + 1) % MODE_CYCLE.length];
     this.store.dispatch(setThemeMode({ mode: next }));
   }
 }

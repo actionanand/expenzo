@@ -1,16 +1,19 @@
 import { Component, ChangeDetectionStrategy, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { LucideDynamicIcon } from '@lucide/angular';
 
 type HelpTab = 'sheets' | 'android';
 
 @Component({
   selector: 'app-help',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink],
+  imports: [LucideDynamicIcon, RouterLink],
   template: `
     <div class="help-page">
       <header class="help-header">
-        <a routerLink="/" class="back-btn" aria-label="Back to dashboard">&larr;</a>
+        <a routerLink="/" class="back-btn" aria-label="Back to dashboard">
+          <svg lucideIcon="chevron-right" aria-hidden="true"></svg>
+        </a>
         <h1 class="help-title">Help & Setup Guide</h1>
       </header>
 
@@ -22,7 +25,8 @@ type HelpTab = 'sheets' | 'android';
           [attr.aria-selected]="activeTab() === 'sheets'"
           (click)="activeTab.set('sheets')"
         >
-          📊 Google Sheets
+          <svg lucideIcon="file-spreadsheet" aria-hidden="true"></svg>
+          Google Sheets
         </button>
         <button
           role="tab"
@@ -31,7 +35,8 @@ type HelpTab = 'sheets' | 'android';
           [attr.aria-selected]="activeTab() === 'android'"
           (click)="activeTab.set('android')"
         >
-          🤖 Android App
+          <svg lucideIcon="settings-2" aria-hidden="true"></svg>
+          Android App
         </button>
       </nav>
 
@@ -79,7 +84,7 @@ type HelpTab = 'sheets' | 'android';
           <!-- Important Warning -->
           <section class="help-section">
             <div class="alert alert-danger">
-              <span class="alert-icon">⚠️</span>
+              <svg class="alert-icon" lucideIcon="shield-off" aria-hidden="true"></svg>
               <div>
                 <strong>Trigger Already Exists!</strong>
                 <p>
@@ -156,7 +161,7 @@ type HelpTab = 'sheets' | 'android';
               </div>
             </div>
             <div class="alert alert-success">
-              <span class="alert-icon">✅</span>
+              <svg class="alert-icon" lucideIcon="circle-check" aria-hidden="true"></svg>
               <div>
                 <strong>You will get a URL like:</strong>
                 <div class="code-block">https://script.google.com/macros/s/XXXXX/exec</div>
@@ -228,7 +233,7 @@ type HelpTab = 'sheets' | 'android';
                 <div class="step-body">
                   <p>Choose <strong>New Version</strong> from the Version dropdown</p>
                   <div class="alert alert-danger compact">
-                    <span class="alert-icon">⚠️</span>
+                    <svg class="alert-icon" lucideIcon="shield-off" aria-hidden="true"></svg>
                     <span>This step is critical — always select <strong>New Version</strong></span>
                   </div>
                 </div>
@@ -241,7 +246,7 @@ type HelpTab = 'sheets' | 'android';
               </div>
             </div>
             <div class="alert alert-success">
-              <span class="alert-icon">✅</span>
+              <svg class="alert-icon" lucideIcon="circle-check" aria-hidden="true"></svg>
               <div>
                 No need to create new deployment, trigger, or change API URL. Existing URL continues
                 working.
@@ -472,23 +477,28 @@ type HelpTab = 'sheets' | 'android';
             </p>
             <div class="flow-steps">
               <div class="flow-step">
-                <span class="flow-icon">🔨</span><span>Angular build</span>
+                <svg class="flow-icon" lucideIcon="file-text" aria-hidden="true"></svg>
+                <span>Angular build</span>
               </div>
-              <span class="flow-arrow">→</span>
+              <svg class="flow-arrow" lucideIcon="chevron-right" aria-hidden="true"></svg>
               <div class="flow-step">
-                <span class="flow-icon">📦</span><span>Capacitor sync</span>
+                <svg class="flow-icon" lucideIcon="settings-2" aria-hidden="true"></svg>
+                <span>Capacitor sync</span>
               </div>
-              <span class="flow-arrow">→</span>
+              <svg class="flow-arrow" lucideIcon="chevron-right" aria-hidden="true"></svg>
               <div class="flow-step">
-                <span class="flow-icon">🤖</span><span>Gradle build</span>
+                <svg class="flow-icon" lucideIcon="monitor-cog" aria-hidden="true"></svg>
+                <span>Gradle build</span>
               </div>
-              <span class="flow-arrow">→</span>
+              <svg class="flow-arrow" lucideIcon="chevron-right" aria-hidden="true"></svg>
               <div class="flow-step">
-                <span class="flow-icon">🔐</span><span>Sign APK/AAB</span>
+                <svg class="flow-icon" lucideIcon="lock-keyhole" aria-hidden="true"></svg>
+                <span>Sign APK/AAB</span>
               </div>
-              <span class="flow-arrow">→</span>
+              <svg class="flow-arrow" lucideIcon="chevron-right" aria-hidden="true"></svg>
               <div class="flow-step">
-                <span class="flow-icon">📥</span><span>Saved to branch</span>
+                <svg class="flow-icon" lucideIcon="file-text" aria-hidden="true"></svg>
+                <span>Saved to branch</span>
               </div>
             </div>
           </section>
@@ -811,7 +821,7 @@ type HelpTab = 'sheets' | 'android';
               </div>
             </div>
             <div class="alert alert-danger">
-              <span class="alert-icon">⚠️</span>
+              <svg class="alert-icon" lucideIcon="shield-off" aria-hidden="true"></svg>
               <div>
                 <strong>Never commit</strong> <code>release-keystore.jks</code> to the repo. Back it
                 up securely — losing it means you can never update your Play Store app.
@@ -879,12 +889,12 @@ type HelpTab = 'sheets' | 'android';
             <h2 class="section-heading">Signed vs Unsigned</h2>
             <div class="feature-grid">
               <div class="feature-card">
-                <span class="feature-icon">🔐</span>
+                <svg class="feature-icon" lucideIcon="lock-keyhole" aria-hidden="true"></svg>
                 <h3>Signed</h3>
                 <p>Requires all 4 keystore secrets. Works for Play Store and sideloading.</p>
               </div>
               <div class="feature-card">
-                <span class="feature-icon">🔓</span>
+                <svg class="feature-icon" lucideIcon="unlock" aria-hidden="true"></svg>
                 <h3>Unsigned</h3>
                 <p>
                   Built if keystore fails or is missing. Good for testing. Not accepted by Play
@@ -893,7 +903,7 @@ type HelpTab = 'sheets' | 'android';
               </div>
             </div>
             <p class="section-desc">
-              If signing fails, the workflow shows a ⚠️ warning annotation in the Actions log
+              If signing fails, the workflow shows a warning annotation in the Actions log
               explaining why. The build does <strong>not</strong> fail — unsigned files are still
               saved.
             </p>

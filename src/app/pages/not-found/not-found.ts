@@ -23,7 +23,7 @@ import { RouterLink } from '@angular/router';
         min-height: 100vh;
         gap: 1rem;
         padding: 2rem;
-        background: var(--color-background);
+        background: var(--color-bg);
         text-align: center;
       }
 

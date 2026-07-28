@@ -1,5 +1,6 @@
 import { Component, ChangeDetectionStrategy, inject, signal, OnInit } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { LucideDynamicIcon } from '@lucide/angular';
 
 import { WishlistService } from '../../services/wishlist.service';
 import { WishlistItem } from '../../models/wishlist.model';
@@ -9,11 +10,13 @@ import { CacheService } from '../../services/cache.service';
 @Component({
   selector: 'app-stockpile',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, PullToRefresh],
+  imports: [LucideDynamicIcon, PullToRefresh, RouterLink],
   template: `
     <div class="stockpile-page">
       <header class="stockpile-header">
-        <a routerLink="/" class="back-btn" aria-label="Back to dashboard">&larr;</a>
+        <a routerLink="/" class="back-btn" aria-label="Back to dashboard">
+          <svg lucideIcon="chevron-right" aria-hidden="true"></svg>
+        </a>
         <h1 class="stockpile-title">Stockpile</h1>
         <span class="item-count">{{ items().length }} items</span>
       </header>

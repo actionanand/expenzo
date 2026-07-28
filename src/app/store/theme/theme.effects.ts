@@ -5,6 +5,7 @@ import { first, map, tap, withLatestFrom } from 'rxjs';
 
 import { initTheme, setThemeMode, ThemeMode } from './theme.actions';
 import { selectIsDark, selectThemeMode } from './theme.selectors';
+import '../../models/native-bridge.model';
 
 @Injectable()
 export class ThemeEffects {
@@ -17,7 +18,7 @@ export class ThemeEffects {
         ofType(setThemeMode),
         withLatestFrom(this.store.select(selectIsDark)),
         tap(([{ mode }, isDark]) => {
-          document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+          this.applyTheme(isDark);
           localStorage.setItem('expenzo-theme', mode);
         }),
       ),
@@ -36,7 +37,7 @@ export class ThemeEffects {
           mode === 'auto'
             ? window.matchMedia('(prefers-color-scheme: dark)').matches
             : mode === 'dark';
-        document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+        this.applyTheme(isDark);
 
         // Listen for system theme changes (for auto mode)
         this.listenSystemTheme();
@@ -53,9 +54,19 @@ export class ThemeEffects {
         .pipe(first())
         .subscribe((mode) => {
           if (mode === 'auto') {
-            document.documentElement.setAttribute('data-theme', e.matches ? 'dark' : 'light');
+            this.applyTheme(e.matches);
           }
         });
     });
+  }
+
+  private applyTheme(isDark: boolean): void {
+    const theme = isDark ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', theme);
+    document.documentElement.style.colorScheme = theme;
+    document
+      .querySelector('meta[name="theme-color"]')
+      ?.setAttribute('content', isDark ? '#0d1b0d' : '#f1f8e9');
+    window.ExpenzoSystemBars?.setDarkMode(isDark);
   }
 }
