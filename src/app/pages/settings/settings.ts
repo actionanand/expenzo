@@ -17,6 +17,7 @@ import { SecurityService } from '../../services/security.service';
   imports: [AppSelectPicker, LucideDynamicIcon, ReactiveFormsModule, RouterLink],
   host: {
     '(window:biometric-enabled)': 'onBiometricEnabled()',
+    '(window:expenzo-back-button)': 'onNativeBack($event)',
   },
   template: `
     <main class="settings-backdrop">
@@ -240,6 +241,19 @@ export class Settings {
     pin: ['', [Validators.required, Validators.pattern(/^\d{4,8}$/)]],
     confirmation: ['', [Validators.required, Validators.pattern(/^\d{4,8}$/)]],
   });
+
+  protected onNativeBack(event: Event): void {
+    if (this.pinDialogOpen()) {
+      event.preventDefault();
+      this.closePinDialog();
+      return;
+    }
+
+    if (this.confirmRemove()) {
+      event.preventDefault();
+      this.confirmRemove.set(false);
+    }
+  }
   protected readonly autoLockOptions: readonly AppSelectOption[] = [
     { value: '0', label: 'Immediately' },
     { value: '1', label: 'After 1 minute' },

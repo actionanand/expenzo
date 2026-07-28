@@ -4,12 +4,15 @@ import {
   ElementRef,
   computed,
   effect,
+  inject,
   input,
   output,
   signal,
   viewChild,
 } from '@angular/core';
 import { LucideDynamicIcon } from '@lucide/angular';
+
+import { HapticFeedbackService } from '../../services/haptic-feedback.service';
 
 export interface AppSelectOption {
   readonly value: string;
@@ -23,6 +26,9 @@ export interface AppSelectOption {
   selector: 'app-select-picker',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [LucideDynamicIcon],
+  host: {
+    '(window:expenzo-back-button)': 'onNativeBack($event)',
+  },
   template: `
     @if (label()) {
       <span class="field-label">{{ label() }}</span>
@@ -102,6 +108,7 @@ export interface AppSelectOption {
   styleUrl: './app-select-picker.scss',
 })
 export class AppSelectPicker {
+  private readonly haptics = inject(HapticFeedbackService);
   readonly label = input('');
   readonly sheetTitle = input('');
   readonly value = input('');
@@ -161,8 +168,16 @@ export class AppSelectPicker {
   }
 
   protected select(value: string): void {
+    this.haptics.trigger('selection');
     this.valueChange.emit(value);
     this.close();
+  }
+
+  protected onNativeBack(event: Event): void {
+    if (this.open()) {
+      event.preventDefault();
+      this.close();
+    }
   }
 
   protected onBackdropClick(event: MouseEvent): void {

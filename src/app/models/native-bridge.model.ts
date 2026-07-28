@@ -3,6 +3,7 @@ export interface ExpenzoNativeBridge {
   enableBiometric(secret: string): void;
   authenticateBiometric(): void;
   disableBiometric(): void;
+  hapticFeedback(style: 'selection' | 'error'): void;
 }
 
 export interface ExpenzoSystemBarsBridge {

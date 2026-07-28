@@ -11,10 +11,16 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 1rem;
+  padding: max(1rem, env(safe-area-inset-top)) 1rem 1rem;
   background: var(--color-primary);
   color: var(--color-on-primary);
   box-shadow: var(--shadow-md);
+}
+
+@media (max-width: 640px) {
+  .stockpile-header .back-btn {
+    display: none;
+  }
 }
 
 .back-btn {

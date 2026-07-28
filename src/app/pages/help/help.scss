@@ -11,7 +11,7 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 1rem;
+  padding: max(1rem, env(safe-area-inset-top)) 1rem 1rem;
   background: var(--color-primary);
   color: var(--color-on-primary);
   box-shadow: var(--shadow-md);
@@ -56,8 +56,14 @@
   background: var(--color-surface);
   border-bottom: 2px solid var(--color-border);
   position: sticky;
-  top: 3.5rem;
+  top: calc(3.5rem + env(safe-area-inset-top));
   z-index: 9;
+}
+
+@media (max-width: 640px) {
+  .help-header .back-btn {
+    display: none;
+  }
 }
 
 .tab-btn {

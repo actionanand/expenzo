@@ -15,6 +15,7 @@ import { AppLockService } from '../../services/app-lock.service';
 import { AuthService } from '../../services/auth.service';
 import { SecuritySettingsService } from '../../services/security-settings.service';
 import { SecurityService } from '../../services/security.service';
+import { HapticFeedbackService } from '../../services/haptic-feedback.service';
 
 @Component({
   selector: 'app-lock',
@@ -22,6 +23,7 @@ import { SecurityService } from '../../services/security.service';
   imports: [LucideDynamicIcon, NgOptimizedImage, ReactiveFormsModule],
   host: {
     '(document:keydown.escape)': 'onEscape()',
+    '(window:expenzo-back-button)': 'onNativeBack($event)',
   },
   template: `
     @if (lock.locked()) {
@@ -190,6 +192,7 @@ export class AppLock {
   protected readonly security = inject(SecurityService);
   private readonly auth = inject(AuthService);
   private readonly formBuilder = inject(FormBuilder);
+  private readonly haptics = inject(HapticFeedbackService);
   protected readonly unlockForm = this.formBuilder.nonNullable.group({
     pin: ['', [Validators.required, Validators.pattern(/^\d{4,8}$/)]],
   });
@@ -280,6 +283,13 @@ export class AppLock {
     }
   }
 
+  protected onNativeBack(event: Event): void {
+    if (this.resetOpen()) {
+      event.preventDefault();
+      this.closeReset();
+    }
+  }
+
   protected async verifyMasterPassword(): Promise<void> {
     if (this.masterForm.invalid) {
       this.showResetError('Enter your master password.');
@@ -344,12 +354,14 @@ export class AppLock {
 
   private showPinError(message: string): void {
     this.error.set(message);
+    this.haptics.trigger('error');
     this.pinShake.set(false);
     window.setTimeout(() => this.pinShake.set(true));
   }
 
   private showResetError(message: string): void {
     this.resetError.set(message);
+    this.haptics.trigger('error');
     this.resetShake.set(false);
     window.setTimeout(() => this.resetShake.set(true));
   }

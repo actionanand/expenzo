@@ -457,6 +457,7 @@ import android.os.Bundle;
 import android.security.keystore.KeyGenParameterSpec;
 import android.security.keystore.KeyProperties;
 import android.util.Base64;
+import android.view.HapticFeedbackConstants;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowInsetsController;
@@ -506,6 +507,24 @@ public class MainActivity extends BridgeActivity {
     if (hasFocus) {
       applySystemBars(darkMode);
     }
+  }
+
+  @Override
+  public void onBackPressed() {
+    getBridge().getWebView().evaluateJavascript(
+      "(function(){var event=new Event('expenzo-back-button',{cancelable:true});"
+        + "return window.dispatchEvent(event);})()",
+      shouldNavigateBack -> {
+        if ("true".equals(shouldNavigateBack)) {
+          performDefaultBack();
+        }
+      }
+    );
+  }
+
+  @SuppressWarnings("deprecation")
+  private void performDefaultBack() {
+    super.onBackPressed();
   }
 
   public class SystemBarsBridge {
@@ -611,6 +630,19 @@ public class MainActivity extends BridgeActivity {
       } catch (Exception ignored) {
         // Nothing else is required when the key no longer exists.
       }
+    }
+
+    @JavascriptInterface
+    public void hapticFeedback(String style) {
+      runOnUiThread(() -> {
+        int feedback = HapticFeedbackConstants.CLOCK_TICK;
+        if ("error".equals(style)) {
+          feedback = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
+            ? HapticFeedbackConstants.REJECT
+            : HapticFeedbackConstants.LONG_PRESS;
+        }
+        getBridge().getWebView().performHapticFeedback(feedback);
+      });
     }
   }
 

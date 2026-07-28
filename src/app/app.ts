@@ -7,11 +7,12 @@ import { AuthGate } from './components/auth-gate/auth-gate';
 import { CacheService } from './services/cache.service';
 import { AppLock } from './components/app-lock/app-lock';
 import { AppLockService } from './services/app-lock.service';
+import { MobileNavigation } from './components/mobile-navigation/mobile-navigation';
 
 @Component({
   selector: 'app-root',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterOutlet, AuthGate, AppLock],
+  imports: [RouterOutlet, AuthGate, AppLock, MobileNavigation],
   host: {
     '(document:visibilitychange)': 'onVisibilityChange()',
     '(window:biometric-success)': 'onBiometricSuccess()',
