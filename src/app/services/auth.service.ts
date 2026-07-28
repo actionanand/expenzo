@@ -11,13 +11,17 @@ export class AuthService {
   readonly redirectUrl = signal<string | null>(null);
 
   async login(password: string): Promise<boolean> {
-    const hash = await this.sha1(password);
-    if (hash === environment.passwordHash) {
-      localStorage.setItem(this.AUTH_KEY, hash);
+    if (await this.verifyPassword(password)) {
+      localStorage.setItem(this.AUTH_KEY, environment.passwordHash);
       this.isAuthenticated.set(true);
       return true;
     }
     return false;
+  }
+
+  async verifyPassword(password: string): Promise<boolean> {
+    const hash = await this.sha1(password);
+    return hash === environment.passwordHash;
   }
 
   logout(): void {

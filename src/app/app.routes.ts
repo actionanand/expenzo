@@ -23,6 +23,11 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/help/help').then((m) => m.Help),
   },
   {
+    path: 'settings',
+    canActivate: [authGuard],
+    loadComponent: () => import('./pages/settings/settings').then((m) => m.Settings),
+  },
+  {
     path: '**',
     loadComponent: () => import('./pages/not-found/not-found').then((m) => m.NotFound),
   },

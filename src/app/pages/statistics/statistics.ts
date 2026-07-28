@@ -8,6 +8,7 @@ import { ExpensePieChart } from '../../components/charts/expense-pie-chart/expen
 import { ExpenseBarChart } from '../../components/charts/expense-bar-chart/expense-bar-chart';
 import { ExpenseTrendChart } from '../../components/charts/expense-trend-chart/expense-trend-chart';
 import { SavingsRateChart } from '../../components/charts/savings-rate-chart/savings-rate-chart';
+import { SpendingTrendChart } from '../../components/charts/spending-trend-chart/spending-trend-chart';
 
 type RangeKey = 'current' | '3m' | '6m' | '1y' | 'all';
 
@@ -27,6 +28,7 @@ interface RangeOption {
     ExpenseBarChart,
     ExpenseTrendChart,
     SavingsRateChart,
+    SpendingTrendChart,
   ],
   template: `
     <div class="statistics-content">
@@ -41,6 +43,8 @@ interface RangeOption {
           </button>
         }
       </div>
+
+      <app-spending-trend-chart [cycles]="filteredCycles()" />
 
       @if (selectedRange() === 'current') {
         <app-expense-pie-chart [allCycles]="cycles()" />

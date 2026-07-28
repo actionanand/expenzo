@@ -1,4 +1,5 @@
 import { Component, ChangeDetectionStrategy, input, signal } from '@angular/core';
+import { LucideDynamicIcon } from '@lucide/angular';
 
 import { CycleData, Transaction } from '../../models/expense.model';
 
@@ -31,13 +32,14 @@ declare global {
 @Component({
   selector: 'app-export-data',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [LucideDynamicIcon],
   template: `
     <section class="export-section">
       <div class="export-card">
         <h3 class="export-title">Export Data</h3>
         <div class="export-actions">
           <button type="button" class="export-btn csv" [disabled]="busy()" (click)="onExportCSV()">
-            <span class="export-icon">📊</span>
+            <svg class="export-icon" lucideIcon="file-spreadsheet" aria-hidden="true"></svg>
             Export CSV
           </button>
           <button
@@ -46,7 +48,7 @@ declare global {
             [disabled]="busy()"
             (click)="onExportReport()"
           >
-            <span class="export-icon">📄</span>
+            <svg class="export-icon" lucideIcon="file-text" aria-hidden="true"></svg>
             Export Report
           </button>
         </div>
@@ -107,8 +109,8 @@ export class ExportData {
       .catch(() => {
         // Both share and download failed (Android WebView) — clipboard fallback
         return navigator.clipboard.writeText(csv).then(
-          () => this.showToast('📋 CSV copied to clipboard'),
-          () => this.showToast('❌ Export failed', true),
+          () => this.showToast('CSV copied to clipboard'),
+          () => this.showToast('Export failed', true),
         );
       })
       .finally(() => this.busy.set(false));
@@ -150,7 +152,7 @@ export class ExportData {
         this.printViaIframe(html);
       })
       .catch(() => {
-        this.showToast('❌ Export failed', true);
+        this.showToast('Export failed', true);
       })
       .finally(() => this.busy.set(false));
   }
@@ -215,7 +217,7 @@ export class ExportData {
     return navigator
       .share({ files: [file], title: `Expenzo – ${this.cycle().label}` })
       .then(() => {
-        this.showToast('✅ Shared successfully');
+        this.showToast('Shared successfully');
         return true;
       })
       .catch((e: unknown) => {

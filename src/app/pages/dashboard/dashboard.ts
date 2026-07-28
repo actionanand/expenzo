@@ -18,9 +18,8 @@ import { IncomeSummary } from '../../components/income-summary/income-summary';
 import { MonthNavigator } from '../../components/month-navigator/month-navigator';
 import { Statistics } from '../statistics/statistics';
 import { PullToRefresh } from '../../components/pull-to-refresh/pull-to-refresh';
-import { DailyAverage } from '../../components/daily-average/daily-average';
-import { BudgetGauge } from '../../components/budget-gauge/budget-gauge';
 import { ExportData } from '../../components/export-data/export-data';
+import { BudgetCycleHero } from '../../components/budget-cycle-hero/budget-cycle-hero';
 import { transformToCycles } from '../../utils/cycle-transformer';
 import { CacheService } from '../../services/cache.service';
 import { environment } from '../../../environments/environment';
@@ -40,8 +39,7 @@ type ViewTab = 'month' | 'stats';
     MonthNavigator,
     Statistics,
     PullToRefresh,
-    DailyAverage,
-    BudgetGauge,
+    BudgetCycleHero,
     ExportData,
   ],
   template: `
@@ -106,11 +104,10 @@ type ViewTab = 'month' | 'stats';
               {{ cycle.cycleTo | date: 'dd MMM yyyy' }}
               <span class="tx-count">({{ cycle.transactionCount }} entries)</span>
             </p>
-            <app-summary-cards [summary]="cycle.summary" [isLatest]="isLatestCycle()" />
             @if (isLatestCycle()) {
-              <app-daily-average [cycle]="cycle" />
-              <app-budget-gauge [cycle]="cycle" />
+              <app-budget-cycle-hero [cycle]="cycle" />
             }
+            <app-summary-cards [summary]="cycle.summary" [isLatest]="isLatestCycle()" />
             <app-category-breakdown
               [categories]="cycle.categorySummary"
               [transactions]="cycle.transactions"

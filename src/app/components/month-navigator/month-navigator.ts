@@ -1,8 +1,10 @@
 import { Component, ChangeDetectionStrategy, input, output, computed } from '@angular/core';
+import { LucideDynamicIcon } from '@lucide/angular';
 
 @Component({
   selector: 'app-month-navigator',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [LucideDynamicIcon],
   template: `
     <nav class="month-nav" aria-label="Month navigation">
       <button
@@ -12,7 +14,7 @@ import { Component, ChangeDetectionStrategy, input, output, computed } from '@an
         aria-label="Previous month"
         type="button"
       >
-        &#8249;
+        <svg class="previous-icon" lucideIcon="chevron-right" aria-hidden="true"></svg>
       </button>
       <span class="month-label" aria-live="polite">{{ currentMonth() }}</span>
       <button
@@ -22,7 +24,7 @@ import { Component, ChangeDetectionStrategy, input, output, computed } from '@an
         aria-label="Next month"
         type="button"
       >
-        &#8250;
+        <svg lucideIcon="chevron-right" aria-hidden="true"></svg>
       </button>
     </nav>
   `,

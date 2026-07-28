@@ -6,6 +6,7 @@ const javaDir = join('android', 'app', 'src', 'main', 'java', ...appPackage.spli
 const mainActivityPath = join(javaDir, 'MainActivity.java');
 const exportPluginPath = join(javaDir, 'ExpenzoExportPlugin.java');
 const manifestPath = join('android', 'app', 'src', 'main', 'AndroidManifest.xml');
+const gradlePath = join('android', 'app', 'build.gradle');
 const filePathsPath = join('android', 'app', 'src', 'main', 'res', 'xml', 'expenzo_file_paths.xml');
 
 mkdirSync(javaDir, { recursive: true });
@@ -449,21 +450,308 @@ writeFileSync(
   mainActivityPath,
   `package ${appPackage};
 
+import android.content.res.Configuration;
+import android.graphics.Color;
+import android.os.Build;
 import android.os.Bundle;
+import android.security.keystore.KeyGenParameterSpec;
+import android.security.keystore.KeyProperties;
+import android.util.Base64;
+import android.view.HapticFeedbackConstants;
+import android.view.View;
+import android.view.Window;
+import android.view.WindowInsetsController;
+import android.webkit.JavascriptInterface;
 
+import androidx.biometric.BiometricManager;
+import androidx.biometric.BiometricPrompt;
+import androidx.core.content.ContextCompat;
 import com.getcapacitor.BridgeActivity;
 
+import java.nio.charset.StandardCharsets;
+import java.security.KeyStore;
+import java.util.concurrent.Executor;
+
+import javax.crypto.Cipher;
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.GCMParameterSpec;
+
 public class MainActivity extends BridgeActivity {
+  private static final String KEY_ALIAS = "expenzo_biometric_key";
+  private boolean darkMode;
+
   @Override
   public void onCreate(Bundle savedInstanceState) {
     registerPlugin(ExpenzoExportPlugin.class);
     super.onCreate(savedInstanceState);
+    darkMode = (getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK)
+      == Configuration.UI_MODE_NIGHT_YES;
+    getBridge().getWebView().setBackgroundColor(
+      Color.parseColor(darkMode ? "#0D1B0D" : "#F1F8E9")
+    );
+    getBridge().getWebView().addJavascriptInterface(new SystemBarsBridge(), "ExpenzoSystemBars");
+    getBridge().getWebView().addJavascriptInterface(new NativeBridge(), "ExpenzoNative");
+    applySystemBars(darkMode);
+  }
+
+  @Override
+  public void onResume() {
+    super.onResume();
+    applySystemBars(darkMode);
+  }
+
+  @Override
+  public void onWindowFocusChanged(boolean hasFocus) {
+    super.onWindowFocusChanged(hasFocus);
+    if (hasFocus) {
+      applySystemBars(darkMode);
+    }
+  }
+
+  @Override
+  public void onBackPressed() {
+    getBridge().getWebView().evaluateJavascript(
+      "(function(){var event=new Event('expenzo-back-button',{cancelable:true});"
+        + "return window.dispatchEvent(event);})()",
+      shouldNavigateBack -> {
+        if ("true".equals(shouldNavigateBack)) {
+          performDefaultBack();
+        }
+      }
+    );
+  }
+
+  @SuppressWarnings("deprecation")
+  private void performDefaultBack() {
+    super.onBackPressed();
+  }
+
+  public class SystemBarsBridge {
+    @JavascriptInterface
+    public void setDarkMode(boolean enabled) {
+      runOnUiThread(() -> applySystemBars(enabled));
+    }
+  }
+
+  public class NativeBridge {
+    @JavascriptInterface
+    public boolean isBiometricAvailable() {
+      return BiometricManager.from(MainActivity.this).canAuthenticate(
+        BiometricManager.Authenticators.BIOMETRIC_STRONG
+      ) == BiometricManager.BIOMETRIC_SUCCESS;
+    }
+
+    @JavascriptInterface
+    public void enableBiometric(String secret) {
+      runOnUiThread(() -> {
+        try {
+          Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+          cipher.init(Cipher.ENCRYPT_MODE, createBiometricKey());
+          showPrompt(
+            "Enable fingerprint unlock",
+            "Confirm your fingerprint for Expenzo",
+            cipher,
+            () -> {
+              try {
+                byte[] encrypted = cipher.doFinal(secret.getBytes(StandardCharsets.UTF_8));
+                getPreferences(MODE_PRIVATE).edit()
+                  .putString(
+                    "biometric_ciphertext",
+                    Base64.encodeToString(encrypted, Base64.NO_WRAP)
+                  )
+                  .putString(
+                    "biometric_iv",
+                    Base64.encodeToString(cipher.getIV(), Base64.NO_WRAP)
+                  )
+                  .apply();
+                dispatchEvent("biometric-enabled");
+              } catch (Exception ignored) {
+                // The JavaScript setting is only enabled after a successful event.
+              }
+            }
+          );
+        } catch (Exception ignored) {
+          // Keep PIN unlock available when biometric setup cannot start.
+        }
+      });
+    }
+
+    @JavascriptInterface
+    public void authenticateBiometric() {
+      runOnUiThread(() -> {
+        try {
+          String encryptedValue = getPreferences(MODE_PRIVATE)
+            .getString("biometric_ciphertext", "");
+          String ivValue = getPreferences(MODE_PRIVATE).getString("biometric_iv", "");
+          if (encryptedValue.isEmpty() || ivValue.isEmpty()) {
+            return;
+          }
+
+          Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+          cipher.init(
+            Cipher.DECRYPT_MODE,
+            loadBiometricKey(),
+            new GCMParameterSpec(128, Base64.decode(ivValue, Base64.NO_WRAP))
+          );
+          showPrompt(
+            "Unlock Expenzo",
+            "Use your fingerprint or enter your PIN",
+            cipher,
+            () -> {
+              try {
+                byte[] result = cipher.doFinal(
+                  Base64.decode(encryptedValue, Base64.NO_WRAP)
+                );
+                if (result.length > 0) {
+                  dispatchEvent("biometric-success");
+                }
+              } catch (Exception ignored) {
+                // PIN remains available when decryption fails.
+              }
+            }
+          );
+        } catch (Exception ignored) {
+          // PIN remains available when the key has been invalidated.
+        }
+      });
+    }
+
+    @JavascriptInterface
+    public void disableBiometric() {
+      getPreferences(MODE_PRIVATE).edit()
+        .remove("biometric_ciphertext")
+        .remove("biometric_iv")
+        .apply();
+      try {
+        KeyStore keyStore = KeyStore.getInstance("AndroidKeyStore");
+        keyStore.load(null);
+        keyStore.deleteEntry(KEY_ALIAS);
+      } catch (Exception ignored) {
+        // Nothing else is required when the key no longer exists.
+      }
+    }
+
+    @JavascriptInterface
+    public void hapticFeedback(String style) {
+      runOnUiThread(() -> {
+        int feedback = HapticFeedbackConstants.CLOCK_TICK;
+        if ("error".equals(style)) {
+          feedback = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
+            ? HapticFeedbackConstants.REJECT
+            : HapticFeedbackConstants.LONG_PRESS;
+        }
+        getBridge().getWebView().performHapticFeedback(feedback);
+      });
+    }
+  }
+
+  private void showPrompt(String title, String subtitle, Cipher cipher, Runnable success) {
+    Executor executor = ContextCompat.getMainExecutor(this);
+    BiometricPrompt prompt = new BiometricPrompt(
+      this,
+      executor,
+      new BiometricPrompt.AuthenticationCallback() {
+        @Override
+        public void onAuthenticationSucceeded(BiometricPrompt.AuthenticationResult result) {
+          super.onAuthenticationSucceeded(result);
+          success.run();
+        }
+      }
+    );
+    BiometricPrompt.PromptInfo info = new BiometricPrompt.PromptInfo.Builder()
+      .setTitle(title)
+      .setSubtitle(subtitle)
+      .setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_STRONG)
+      .setNegativeButtonText("Use PIN")
+      .build();
+    prompt.authenticate(info, new BiometricPrompt.CryptoObject(cipher));
+  }
+
+  private SecretKey createBiometricKey() throws Exception {
+    KeyGenerator generator = KeyGenerator.getInstance(
+      KeyProperties.KEY_ALGORITHM_AES,
+      "AndroidKeyStore"
+    );
+    KeyGenParameterSpec.Builder builder = new KeyGenParameterSpec.Builder(
+      KEY_ALIAS,
+      KeyProperties.PURPOSE_ENCRYPT | KeyProperties.PURPOSE_DECRYPT
+    )
+      .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
+      .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
+      .setUserAuthenticationRequired(true)
+      .setInvalidatedByBiometricEnrollment(true);
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+      builder.setUserAuthenticationParameters(0, KeyProperties.AUTH_BIOMETRIC_STRONG);
+    }
+    generator.init(builder.build());
+    return generator.generateKey();
+  }
+
+  private SecretKey loadBiometricKey() throws Exception {
+    KeyStore keyStore = KeyStore.getInstance("AndroidKeyStore");
+    keyStore.load(null);
+    return (SecretKey) keyStore.getKey(KEY_ALIAS, null);
+  }
+
+  private void dispatchEvent(String eventName) {
+    getBridge().getWebView().post(() ->
+      getBridge().getWebView().evaluateJavascript(
+        "window.dispatchEvent(new CustomEvent('" + eventName + "'))",
+        null
+      )
+    );
+  }
+
+  private void applySystemBars(boolean dark) {
+    darkMode = dark;
+    Window window = getWindow();
+    int background = Color.parseColor(dark ? "#0D1B0D" : "#F1F8E9");
+    window.setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(background));
+    window.getDecorView().setBackgroundColor(background);
+    getBridge().getWebView().setBackgroundColor(background);
+    window.setStatusBarColor(background);
+    window.setNavigationBarColor(background);
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+      window.setStatusBarContrastEnforced(false);
+      window.setNavigationBarContrastEnforced(false);
+    }
+
+    View decor = window.getDecorView();
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+      WindowInsetsController controller = decor.getWindowInsetsController();
+      if (controller != null) {
+        int lightFlags = WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
+          | WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS;
+        controller.setSystemBarsAppearance(dark ? 0 : lightFlags, lightFlags);
+      }
+      return;
+    }
+
+    int flags = decor.getSystemUiVisibility();
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+      flags = dark
+        ? flags & ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
+        : flags | View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+    }
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+      flags = dark
+        ? flags & ~View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
+        : flags | View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
+    }
+    decor.setSystemUiVisibility(flags);
   }
 }
 `,
 );
 
 let manifest = readFileSync(manifestPath, 'utf8');
+if (!manifest.includes('android.permission.USE_BIOMETRIC')) {
+  manifest = manifest.replace(
+    '<application',
+    '    <uses-permission android:name="android.permission.USE_BIOMETRIC" />\n\n    <application',
+  );
+}
 if (!/android:name="androidx\.core\.content\.FileProvider"/.test(manifest)) {
   manifest = manifest.replace(
     /<\/application>/,
@@ -482,4 +770,13 @@ if (!/android:name="androidx\.core\.content\.FileProvider"/.test(manifest)) {
 
 writeFileSync(manifestPath, manifest);
 
-console.log('Android export plugin patched.');
+let gradle = readFileSync(gradlePath, 'utf8');
+if (!gradle.includes('androidx.biometric:biometric')) {
+  gradle = gradle.replace(
+    /dependencies\s*\{/,
+    "dependencies {\n    implementation 'androidx.biometric:biometric:1.1.0'",
+  );
+  writeFileSync(gradlePath, gradle);
+}
+
+console.log('Android export, system bar, and biometric support patched.');

@@ -1,7 +1,11 @@
 <app-auth-gate />
-<router-outlet />
+<div class="app-content" [attr.inert]="lock.locked() ? '' : null">
+  <router-outlet />
+  <app-mobile-navigation />
+</div>
+<app-lock />
 @if (cache.offlineToast()) {
   <div class="offline-toast" role="status" aria-live="polite">
-    📡 Showing offline data. Connect to internet for latest.
+    Showing offline data. Connect to the internet for the latest information.
   </div>
 }

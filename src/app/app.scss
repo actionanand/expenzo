@@ -2,6 +2,10 @@
   display: block;
 }
 
+.app-content {
+  min-height: 100dvh;
+}
+
 .offline-toast {
   position: fixed;
   bottom: 1rem;
@@ -16,6 +20,16 @@
   box-shadow: 0 4px 12px rgb(0 0 0 / 25%);
   z-index: 9999;
   animation: toast-in 0.3s ease;
+}
+
+@media (max-width: 640px) {
+  .app-content {
+    padding-bottom: calc(4rem + env(safe-area-inset-bottom));
+  }
+
+  .offline-toast {
+    bottom: calc(4.75rem + env(safe-area-inset-bottom));
+  }
 }
 
 @keyframes toast-in {

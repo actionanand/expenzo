@@ -1,5 +1,6 @@
 import { Component, ChangeDetectionStrategy, inject, signal, OnInit } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { LucideDynamicIcon } from '@lucide/angular';
 
 import { ChecklistService } from '../../services/checklist.service';
 import { ChecklistGroup } from '../../models/checklist.model';
@@ -9,11 +10,13 @@ import { CacheService } from '../../services/cache.service';
 @Component({
   selector: 'app-checklist',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, PullToRefresh],
+  imports: [LucideDynamicIcon, PullToRefresh, RouterLink],
   template: `
     <div class="checklist-page">
       <header class="checklist-header">
-        <a routerLink="/" class="back-btn" aria-label="Back to dashboard">&larr;</a>
+        <a routerLink="/" class="back-btn" aria-label="Back to dashboard">
+          <svg lucideIcon="chevron-right" aria-hidden="true"></svg>
+        </a>
         <h1 class="checklist-title">Checklist</h1>
       </header>
 
