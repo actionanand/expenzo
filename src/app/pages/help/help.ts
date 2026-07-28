@@ -2,7 +2,7 @@ import { Component, ChangeDetectionStrategy, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { LucideDynamicIcon } from '@lucide/angular';
 
-type HelpTab = 'sheets' | 'android';
+type HelpTab = 'guide' | 'sheets' | 'android';
 
 @Component({
   selector: 'app-help',
@@ -10,39 +10,251 @@ type HelpTab = 'sheets' | 'android';
   imports: [LucideDynamicIcon, RouterLink],
   template: `
     <div class="help-page">
-      <header class="help-header">
-        <a routerLink="/" class="back-btn" aria-label="Back to dashboard">
-          <svg lucideIcon="chevron-right" aria-hidden="true"></svg>
-        </a>
-        <h1 class="help-title">Help & Setup Guide</h1>
-      </header>
+      <div class="help-navigation">
+        <header class="help-header">
+          <a routerLink="/" class="back-btn" aria-label="Back to dashboard">
+            <svg lucideIcon="chevron-right" aria-hidden="true"></svg>
+          </a>
+          <h1 class="help-title">Help & Setup Guide</h1>
+        </header>
 
-      <nav class="help-tabs" role="tablist" aria-label="Help sections">
-        <button
-          role="tab"
-          class="tab-btn"
-          [class.active]="activeTab() === 'sheets'"
-          [attr.aria-selected]="activeTab() === 'sheets'"
-          (click)="activeTab.set('sheets')"
+        <nav class="help-tabs" role="tablist" aria-label="Help sections">
+          <button
+            id="help-tab-guide"
+            role="tab"
+            class="tab-btn"
+            [class.active]="activeTab() === 'guide'"
+            [attr.aria-selected]="activeTab() === 'guide'"
+            [attr.tabindex]="activeTab() === 'guide' ? 0 : -1"
+            aria-controls="help-panel-guide"
+            (click)="activeTab.set('guide')"
+            (keydown)="onTabKeydown($event)"
+          >
+            <svg lucideIcon="gauge" aria-hidden="true"></svg>
+            App Guide
+          </button>
+          <button
+            id="help-tab-sheets"
+            role="tab"
+            class="tab-btn"
+            [class.active]="activeTab() === 'sheets'"
+            [attr.aria-selected]="activeTab() === 'sheets'"
+            [attr.tabindex]="activeTab() === 'sheets' ? 0 : -1"
+            aria-controls="help-panel-sheets"
+            (click)="activeTab.set('sheets')"
+            (keydown)="onTabKeydown($event)"
+          >
+            <svg lucideIcon="file-spreadsheet" aria-hidden="true"></svg>
+            Sheets
+          </button>
+          <button
+            id="help-tab-android"
+            role="tab"
+            class="tab-btn"
+            [class.active]="activeTab() === 'android'"
+            [attr.aria-selected]="activeTab() === 'android'"
+            [attr.tabindex]="activeTab() === 'android' ? 0 : -1"
+            aria-controls="help-panel-android"
+            (click)="activeTab.set('android')"
+            (keydown)="onTabKeydown($event)"
+          >
+            <svg lucideIcon="settings-2" aria-hidden="true"></svg>
+            Android
+          </button>
+        </nav>
+      </div>
+
+      <!-- ═══════════════ APP GUIDE TAB ═══════════════ -->
+      @if (activeTab() === 'guide') {
+        <div
+          id="help-panel-guide"
+          class="help-content"
+          role="tabpanel"
+          aria-labelledby="help-tab-guide"
+          tabindex="0"
         >
-          <svg lucideIcon="file-spreadsheet" aria-hidden="true"></svg>
-          Google Sheets
-        </button>
-        <button
-          role="tab"
-          class="tab-btn"
-          [class.active]="activeTab() === 'android'"
-          [attr.aria-selected]="activeTab() === 'android'"
-          (click)="activeTab.set('android')"
-        >
-          <svg lucideIcon="settings-2" aria-hidden="true"></svg>
-          Android App
-        </button>
-      </nav>
+          <section class="help-section">
+            <h2 class="section-heading">Understanding Your Dashboard</h2>
+            <p class="section-desc">
+              Dashboard amounts describe two different things: your cash flow and your spending
+              plan. Balance belongs to cash flow; available to spend belongs to the budget.
+            </p>
+
+            <dl class="metric-list">
+              <div class="metric-row">
+                <dt>Income</dt>
+                <dd>
+                  Total income recorded for the selected budget cycle. It is used to calculate your
+                  balance.
+                </dd>
+                <code>Income = sum of income entries</code>
+              </div>
+              <div class="metric-row">
+                <dt>Expense</dt>
+                <dd>Total of all expense transactions in the selected budget cycle.</dd>
+                <code>Expense = sum of transactions</code>
+              </div>
+              <div class="metric-row">
+                <dt>Balance</dt>
+                <dd>
+                  Income left after expenses. This is a cash-flow result and is not your remaining
+                  category budget.
+                </dd>
+                <code>Balance = income - expense</code>
+              </div>
+              <div class="metric-row">
+                <dt>Budget</dt>
+                <dd>
+                  Total of all category limits, such as Grocery, Fuel, and Medicine. It is your
+                  spending plan and can be different from income.
+                </dd>
+                <code>Budget = sum of category limits</code>
+              </div>
+              <div class="metric-row">
+                <dt>Available to spend</dt>
+                <dd>
+                  Amount remaining inside the category budget. A negative value means the overall
+                  budget has been exceeded.
+                </dd>
+                <code>Available = budget - expense</code>
+              </div>
+              <div class="metric-row">
+                <dt>Budget used</dt>
+                <dd>
+                  Percentage of the total category budget already spent. Values above 100% mean
+                  overspending.
+                </dd>
+                <code>Used % = expense / budget x 100</code>
+              </div>
+              <div class="metric-row">
+                <dt>Average per day</dt>
+                <dd>
+                  Average spending for each elapsed day in the cycle. This describes your pace; it
+                  is not a daily spending allowance.
+                </dd>
+                <code>Average/day = expense / days elapsed</code>
+              </div>
+              <div class="metric-row">
+                <dt>Projected</dt>
+                <dd>
+                  Estimated total expense at the end of an active cycle if the current daily pace
+                  continues. Completed cycles show actual spending instead.
+                </dd>
+                <code>Projected = average/day x cycle length</code>
+              </div>
+              <div class="metric-row">
+                <dt>Days left</dt>
+                <dd>
+                  Calendar days remaining in the selected cycle, including today. Completed cycles
+                  show zero.
+                </dd>
+              </div>
+            </dl>
+          </section>
+
+          <section class="help-section">
+            <h2 class="section-heading">Worked Example</h2>
+            <p class="section-desc">
+              With ₹32,000 income, ₹24,591 expenses, and ₹24,800 in category budgets:
+            </p>
+            <div class="calculation-example">
+              <p><strong>Balance:</strong> ₹32,000 - ₹24,591 = <strong>₹7,409</strong></p>
+              <p>
+                <strong>Available to spend:</strong> ₹24,800 - ₹24,591 =
+                <strong>₹209</strong>
+              </p>
+              <p>
+                <strong>Budget used:</strong> ₹24,591 / ₹24,800 = approximately
+                <strong>99%</strong>
+              </p>
+            </div>
+            <div class="alert alert-info">
+              <svg class="alert-icon" lucideIcon="circle-help" aria-hidden="true"></svg>
+              <div>
+                <strong>Why balance and available are different</strong>
+                <p>
+                  Balance compares income with expenses. Available to spend compares the category
+                  budget with expenses. Neither number is wrong; they answer different questions.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <section class="help-section">
+            <h2 class="section-heading">Budget Cycles and Dates</h2>
+            <ul class="guide-list">
+              <li>
+                The Cycle setting chooses the first day of each budget period. Cycle 25 means a
+                period such as 25 July through 24 August.
+              </li>
+              <li>
+                Use the previous and next arrows to review another cycle. The hero changes to
+                “Completed budget cycle” when viewing a past period.
+              </li>
+              <li>
+                Changing the cycle start day changes how transactions are grouped; it does not alter
+                transaction dates or amounts.
+              </li>
+              <li>
+                Category limits are added together to form the displayed total budget. Update the
+                source sheet when a category limit is incorrect.
+              </li>
+            </ul>
+          </section>
+
+          <section class="help-section">
+            <h2 class="section-heading">Category Breakdown</h2>
+            <ul class="guide-list">
+              <li><strong>Left</strong> shows the category limit minus category spending.</li>
+              <li><strong>Over by</strong> appears when spending exceeds that category limit.</li>
+              <li>
+                A category can be over budget even when the overall budget still has money
+                available.
+              </li>
+              <li>
+                Transactions without a matching configured category may not contribute to the
+                category-limit total, but they still count as expenses.
+              </li>
+            </ul>
+          </section>
+
+          <section class="help-section">
+            <h2 class="section-heading">Data, Exports, and Security</h2>
+            <ul class="guide-list">
+              <li>
+                Pull down on supported lists to refresh. When offline, Expenzo can show cached data;
+                reconnect to receive the latest sheet changes.
+              </li>
+              <li>
+                A “Sample data” banner means the API token or endpoint has not been verified, so
+                dashboard values are examples rather than production data.
+              </li>
+              <li>
+                CSV and PDF exports use the cycle currently being viewed. Android opens the system
+                share sheet so you can save or send the file.
+              </li>
+              <li>
+                PIN protection is stored locally on the device. Fingerprint unlock requires a PIN
+                first and always keeps PIN as the fallback.
+              </li>
+              <li>
+                PIN recovery asks for the master login password again; a value already stored by the
+                browser is not accepted automatically.
+              </li>
+            </ul>
+          </section>
+        </div>
+      }
 
       <!-- ═══════════════ SHEETS TAB ═══════════════ -->
       @if (activeTab() === 'sheets') {
-        <div class="help-content" role="tabpanel">
+        <div
+          id="help-panel-sheets"
+          class="help-content"
+          role="tabpanel"
+          aria-labelledby="help-tab-sheets"
+          tabindex="0"
+        >
           <!-- Functions Overview -->
           <section class="help-section">
             <h2 class="section-heading">Functions Overview</h2>
@@ -467,7 +679,13 @@ type HelpTab = 'sheets' | 'android';
 
       <!-- ═══════════════ ANDROID TAB ═══════════════ -->
       @if (activeTab() === 'android') {
-        <div class="help-content" role="tabpanel">
+        <div
+          id="help-panel-android"
+          class="help-content"
+          role="tabpanel"
+          aria-labelledby="help-tab-android"
+          tabindex="0"
+        >
           <!-- How it works -->
           <section class="help-section">
             <h2 class="section-heading">How It Works</h2>
@@ -915,5 +1133,33 @@ type HelpTab = 'sheets' | 'android';
   styleUrl: './help.scss',
 })
 export class Help {
-  protected readonly activeTab = signal<HelpTab>('sheets');
+  protected readonly activeTab = signal<HelpTab>('guide');
+  private readonly tabOrder: readonly HelpTab[] = ['guide', 'sheets', 'android'];
+
+  protected onTabKeydown(event: KeyboardEvent): void {
+    const currentIndex = this.tabOrder.indexOf(this.activeTab());
+    let nextIndex = currentIndex;
+
+    switch (event.key) {
+      case 'ArrowRight':
+        nextIndex = (currentIndex + 1) % this.tabOrder.length;
+        break;
+      case 'ArrowLeft':
+        nextIndex = (currentIndex - 1 + this.tabOrder.length) % this.tabOrder.length;
+        break;
+      case 'Home':
+        nextIndex = 0;
+        break;
+      case 'End':
+        nextIndex = this.tabOrder.length - 1;
+        break;
+      default:
+        return;
+    }
+
+    event.preventDefault();
+    const tab = this.tabOrder[nextIndex];
+    this.activeTab.set(tab);
+    window.setTimeout(() => document.getElementById(`help-tab-${tab}`)?.focus());
+  }
 }
