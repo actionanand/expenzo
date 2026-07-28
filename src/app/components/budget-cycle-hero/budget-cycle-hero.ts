@@ -49,7 +49,7 @@ const DAY_MS = 86_400_000;
         <span>
           <svg lucideIcon="gauge" aria-hidden="true"></svg>
           <strong>{{ formatCurrency(dailyAverage()) }}</strong>
-          <small>avg/day</small>
+          <small>spent/day</small>
         </span>
         <span>
           <svg lucideIcon="trending-up" aria-hidden="true"></svg>
@@ -155,7 +155,7 @@ export class BudgetCycleHero {
     return Math.round((expense / Math.max(1, this.daysElapsed())) * this.cycleDays());
   });
   protected readonly projectionLabel = computed(() =>
-    this.cycleStatus() === 'complete' ? 'actual spent' : 'projected',
+    this.cycleStatus() === 'complete' ? 'actual spent' : 'projected total',
   );
 
   protected formatCurrency(value: number): string {

@@ -22,7 +22,8 @@ import { ExportData } from '../../components/export-data/export-data';
 import { BudgetCycleHero } from '../../components/budget-cycle-hero/budget-cycle-hero';
 import { transformToCycles } from '../../utils/cycle-transformer';
 import { CacheService } from '../../services/cache.service';
-import { environment } from '../../../environments/environment';
+import { SpendingPaceInsights } from '../../components/spending-pace-insights/spending-pace-insights';
+import { CyclePreferenceService } from '../../services/cycle-preference.service';
 
 type ViewTab = 'month' | 'stats';
 
@@ -40,6 +41,7 @@ type ViewTab = 'month' | 'stats';
     Statistics,
     PullToRefresh,
     BudgetCycleHero,
+    SpendingPaceInsights,
     ExportData,
   ],
   template: `
@@ -106,6 +108,7 @@ type ViewTab = 'month' | 'stats';
             </p>
             @if (isLatestCycle()) {
               <app-budget-cycle-hero [cycle]="cycle" />
+              <app-spending-pace-insights [cycle]="cycle" />
             }
             <app-summary-cards [summary]="cycle.summary" [isLatest]="isLatestCycle()" />
             <app-category-breakdown
@@ -127,12 +130,13 @@ type ViewTab = 'month' | 'stats';
 export class Dashboard implements OnInit {
   private readonly expenseService = inject(ExpenseService);
   private readonly cache = inject(CacheService);
+  private readonly cyclePreference = inject(CyclePreferenceService);
 
   protected readonly data = signal<ExpenseResponse | null>(null);
   protected readonly cycles = signal<CycleData[]>([]);
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
-  protected readonly cycleStartDay = signal(environment.defaultCycleStartDay);
+  protected readonly cycleStartDay = this.cyclePreference.day;
   protected readonly activeTab = signal<ViewTab>('month');
   protected readonly selectedCycleIndex = signal(0);
 
@@ -155,7 +159,7 @@ export class Dashboard implements OnInit {
   }
 
   protected onCycleChange(day: number): void {
-    this.cycleStartDay.set(day);
+    this.cyclePreference.set(day);
     this.loadData();
   }
 

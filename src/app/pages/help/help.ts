@@ -127,20 +127,53 @@ type HelpTab = 'guide' | 'sheets' | 'android';
                 <code>Used % = expense / budget x 100</code>
               </div>
               <div class="metric-row">
-                <dt>Average per day</dt>
+                <dt>Actual spent</dt>
+                <dd>
+                  Expense transactions recorded so far in the selected cycle. This is a historical
+                  total, not an estimate.
+                </dd>
+                <code>Actual spent = sum of expense transactions</code>
+              </div>
+              <div class="metric-row">
+                <dt>Spent per day</dt>
                 <dd>
                   Average spending for each elapsed day in the cycle. This describes your pace; it
                   is not a daily spending allowance.
                 </dd>
-                <code>Average/day = expense / days elapsed</code>
+                <code>Spent/day = actual spent / days elapsed</code>
               </div>
               <div class="metric-row">
-                <dt>Projected</dt>
+                <dt>Projected total</dt>
                 <dd>
-                  Estimated total expense at the end of an active cycle if the current daily pace
-                  continues. Completed cycles show actual spending instead.
+                  Estimated final expense if your actual spending pace continues. It uses actual
+                  spent as its starting point, but it is a forecast and is not the same as actual
+                  spent. Completed cycles show actual spent instead.
                 </dd>
-                <code>Projected = average/day x cycle length</code>
+                <code>Projected = spent/day x cycle length</code>
+              </div>
+              <div class="metric-row">
+                <dt>Income capacity per day</dt>
+                <dd>
+                  Income divided across the whole cycle. This is the maximum cash-flow capacity, not
+                  a recommended spending target.
+                </dd>
+                <code>Income/day = income / cycle days</code>
+              </div>
+              <div class="metric-row">
+                <dt>Budget allowance per day</dt>
+                <dd>
+                  Total category budget divided across the cycle. This is the safer daily amount for
+                  following your spending plan.
+                </dd>
+                <code>Budget/day = category budget / cycle days</code>
+              </div>
+              <div class="metric-row">
+                <dt>Capacity or allowance to date</dt>
+                <dd>
+                  Daily income capacity or budget allowance accumulated through the elapsed days.
+                  Expenzo compares actual spent with both amounts separately.
+                </dd>
+                <code>To date = per-day amount x days elapsed</code>
               </div>
               <div class="metric-row">
                 <dt>Days left</dt>
@@ -178,6 +211,32 @@ type HelpTab = 'guide' | 'sheets' | 'android';
                 </p>
               </div>
             </div>
+          </section>
+
+          <section class="help-section">
+            <h2 class="section-heading">Daily Pace Example</h2>
+            <p class="section-desc">
+              For ₹60,000 income, an ₹8,000 category budget, and a 30-day cycle:
+            </p>
+            <div class="calculation-example">
+              <p>
+                <strong>Income capacity:</strong> ₹60,000 / 30 =
+                <strong>₹2,000 per day</strong>
+              </p>
+              <p>
+                <strong>Budget allowance:</strong> ₹8,000 / 30 =
+                <strong>approximately ₹267 per day</strong>
+              </p>
+              <p>
+                <strong>After 3 elapsed days:</strong> income capacity is
+                <strong>₹6,000</strong> and budget allowance is <strong>₹800</strong>.
+              </p>
+            </div>
+            <p class="section-desc">
+              If actual spent after those three days is ₹900, Expenzo shows ₹5,100 left against
+              income capacity, but ₹100 over the budget pace. The two results are deliberately
+              separate because income and budget answer different questions.
+            </p>
           </section>
 
           <section class="help-section">
@@ -230,8 +289,19 @@ type HelpTab = 'guide' | 'sheets' | 'android';
                 dashboard values are examples rather than production data.
               </li>
               <li>
-                CSV and PDF exports use the cycle currently being viewed. Android opens the system
-                share sheet so you can save or send the file.
+                Home exports use the cycle currently being viewed. The Transactions page can export
+                the current cycle, a selected range of cycles, or all available history. Transaction
+                exports also respect the active category and search filters.
+              </li>
+              <li>
+                On Android, CSV and PDF use the native system share sheet so you can save to Files,
+                Drive, email, or another supported app. PDF exports are generated as real PDF
+                documents with tables.
+              </li>
+              <li>
+                The Transactions tab shows the latest cycle expanded and older cycles collapsed.
+                Search works across all cycle history, and category filtering treats differences
+                such as “grocery” and “Grocery” as the same category.
               </li>
               <li>
                 PIN protection is stored locally on the device. Fingerprint unlock requires a PIN

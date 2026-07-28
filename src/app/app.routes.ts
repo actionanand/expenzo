@@ -9,6 +9,11 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/dashboard/dashboard').then((m) => m.Dashboard),
   },
   {
+    path: 'transactions',
+    canActivate: [authGuard],
+    loadComponent: () => import('./pages/transactions/transactions').then((m) => m.Transactions),
+  },
+  {
     path: 'stockpile',
     canActivate: [authGuard],
     loadComponent: () => import('./pages/stockpile/stockpile').then((m) => m.Stockpile),
