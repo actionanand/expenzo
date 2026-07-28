@@ -1,0 +1,167 @@
+:host {
+  display: block;
+  margin: 0 1rem 1rem;
+}
+
+.pace-insights {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.pace-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+
+  p {
+    color: var(--color-primary);
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  h2 {
+    font-size: 1.05rem;
+  }
+
+  > span {
+    color: var(--color-text-secondary);
+    font-size: 0.7rem;
+    font-weight: 650;
+    white-space: nowrap;
+  }
+}
+
+.pace-note {
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+}
+
+.pace-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.pace-card {
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+
+  > header {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.8rem;
+    border-bottom: 1px solid var(--color-border);
+
+    h3 {
+      font-size: 0.85rem;
+    }
+
+    p {
+      margin-top: 0.05rem;
+      color: var(--color-text-secondary);
+      font-size: 0.68rem;
+    }
+  }
+}
+
+.pace-icon {
+  display: grid;
+  width: 2.25rem;
+  height: 2.25rem;
+  flex: 0 0 2.25rem;
+  border-radius: 8px;
+  place-items: center;
+
+  svg {
+    width: 1.05rem;
+    height: 1.05rem;
+  }
+}
+
+.income-pace {
+  border-top: 3px solid var(--color-income);
+
+  .pace-icon {
+    color: var(--color-income);
+    background: var(--color-income-bg);
+  }
+}
+
+.budget-pace {
+  border-top: 3px solid var(--color-primary);
+
+  .pace-icon {
+    color: var(--color-primary);
+    background: var(--color-primary-surface);
+  }
+}
+
+.daily-capacity {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  padding: 0.8rem;
+
+  strong {
+    font-size: 1.35rem;
+  }
+
+  span {
+    color: var(--color-text-secondary);
+    font-size: 0.7rem;
+  }
+}
+
+dl {
+  display: grid;
+  border-top: 1px solid var(--color-border);
+
+  > div {
+    display: flex;
+    min-height: 2.45rem;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.55rem 0.8rem;
+    border-bottom: 1px solid var(--color-border);
+
+    &:last-child {
+      border-bottom: 0;
+    }
+  }
+
+  dt {
+    color: var(--color-text-secondary);
+    font-size: 0.68rem;
+  }
+
+  dd {
+    color: var(--color-text);
+    text-align: right;
+    font-size: 0.7rem;
+    font-weight: 700;
+  }
+}
+
+.pace-result {
+  dd {
+    color: var(--color-success);
+  }
+
+  &.over dd {
+    color: var(--color-danger);
+  }
+}
+
+@media (max-width: 560px) {
+  .pace-grid {
+    grid-template-columns: 1fr;
+  }
+}

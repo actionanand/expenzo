@@ -11,9 +11,9 @@ const DAY_MS = 86_400_000;
   imports: [LucideDynamicIcon],
   template: `
     <header class="cycle-heading">
-      <p>Current budget cycle</p>
-      <h1>Good {{ daysRemaining() > 15 ? 'start' : 'progress' }}</h1>
-      <span>Here is how your money is doing today.</span>
+      <p>{{ cycleStatusLabel() }}</p>
+      <h1>{{ cycleHeadline() }}</h1>
+      <span>{{ cycleDescription() }}</span>
     </header>
     <section class="budget-hero" aria-labelledby="available-budget-title">
       <div class="hero-top">
@@ -43,18 +43,18 @@ const DAY_MS = 86_400_000;
       <div class="hero-metrics">
         <span>
           <svg lucideIcon="calendar-days" aria-hidden="true"></svg>
-          <strong>{{ daysRemaining() }}</strong>
+          <strong>{{ daysRemaining() }}/{{ cycleDays() }}</strong>
           <small>days left</small>
         </span>
         <span>
           <svg lucideIcon="gauge" aria-hidden="true"></svg>
           <strong>{{ formatCurrency(dailyAverage()) }}</strong>
-          <small>per day</small>
+          <small>spent/day</small>
         </span>
         <span>
           <svg lucideIcon="trending-up" aria-hidden="true"></svg>
           <strong>{{ formatCurrency(projectedExpense()) }}</strong>
-          <small>projected</small>
+          <small>{{ projectionLabel() }}</small>
         </span>
       </div>
     </section>
@@ -64,6 +64,45 @@ const DAY_MS = 86_400_000;
 export class BudgetCycleHero {
   readonly cycle = input.required<CycleData>();
 
+  protected readonly cycleStatus = computed<'upcoming' | 'active' | 'complete'>(() => {
+    const start = this.atStartOfDay(this.cycle().cycleFrom);
+    const end = this.atStartOfDay(this.cycle().cycleTo);
+    const today = this.atStartOfDay(new Date());
+    if (today < start) {
+      return 'upcoming';
+    }
+    return today > end ? 'complete' : 'active';
+  });
+  protected readonly cycleStatusLabel = computed(() => {
+    switch (this.cycleStatus()) {
+      case 'upcoming':
+        return 'Upcoming budget cycle';
+      case 'complete':
+        return 'Completed budget cycle';
+      default:
+        return 'Current budget cycle';
+    }
+  });
+  protected readonly cycleHeadline = computed(() => {
+    switch (this.cycleStatus()) {
+      case 'upcoming':
+        return 'Coming up';
+      case 'complete':
+        return 'Cycle complete';
+      default:
+        return `Good ${this.daysRemaining() > 15 ? 'start' : 'progress'}`;
+    }
+  });
+  protected readonly cycleDescription = computed(() => {
+    switch (this.cycleStatus()) {
+      case 'upcoming':
+        return 'Here is the plan for your next budget cycle.';
+      case 'complete':
+        return 'Here is how your budget cycle finished.';
+      default:
+        return 'Here is how your money is doing today.';
+    }
+  });
   protected readonly totalBudget = computed(() =>
     this.cycle().categorySummary.reduce((total, category) => total + category.limit, 0),
   );
@@ -108,8 +147,15 @@ export class BudgetCycleHero {
   protected readonly dailyAverage = computed(() =>
     Math.round(this.cycle().summary.totalExpense / Math.max(1, this.daysElapsed())),
   );
-  protected readonly projectedExpense = computed(() =>
-    Math.round(this.dailyAverage() * this.cycleDays()),
+  protected readonly projectedExpense = computed(() => {
+    const expense = this.cycle().summary.totalExpense;
+    if (this.cycleStatus() === 'complete') {
+      return expense;
+    }
+    return Math.round((expense / Math.max(1, this.daysElapsed())) * this.cycleDays());
+  });
+  protected readonly projectionLabel = computed(() =>
+    this.cycleStatus() === 'complete' ? 'actual spent' : 'projected total',
   );
 
   protected formatCurrency(value: number): string {

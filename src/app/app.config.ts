@@ -5,6 +5,7 @@ import { provideStore } from '@ngrx/store';
 import { provideEffects } from '@ngrx/effects';
 import { provideStoreDevtools } from '@ngrx/store-devtools';
 import {
+  LucideArrowLeftRight,
   LucideCalendarDays,
   LucideChartNoAxesCombined,
   LucideChevronDown,
@@ -23,6 +24,7 @@ import {
   LucideMonitorCog,
   LucideMoonStar,
   LucideSettings2,
+  LucideSearch,
   LucideShieldCheck,
   LucideShieldOff,
   LucideShoppingBasket,
@@ -46,6 +48,7 @@ export const appConfig: ApplicationConfig = {
     provideEffects([ThemeEffects]),
     provideStoreDevtools({ maxAge: 25, logOnly: !isDevMode() }),
     provideLucideIcons(
+      LucideArrowLeftRight,
       LucideCalendarDays,
       LucideChartNoAxesCombined,
       LucideChevronDown,
@@ -64,6 +67,7 @@ export const appConfig: ApplicationConfig = {
       LucideMonitorCog,
       LucideMoonStar,
       LucideSettings2,
+      LucideSearch,
       LucideShieldCheck,
       LucideShieldOff,
       LucideShoppingBasket,

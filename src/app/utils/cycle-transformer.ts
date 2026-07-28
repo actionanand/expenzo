@@ -56,12 +56,13 @@ function recalculateCategorySummary(
 ): CategorySummary[] {
   const spentMap = new Map<string, number>();
   for (const tx of transactions) {
-    spentMap.set(tx.category, (spentMap.get(tx.category) ?? 0) + tx.price);
+    const categoryKey = normalizeCategory(tx.category);
+    spentMap.set(categoryKey, (spentMap.get(categoryKey) ?? 0) + tx.price);
   }
 
   return categories
     .map((cat) => {
-      const spent = spentMap.get(cat.name) ?? 0;
+      const spent = spentMap.get(normalizeCategory(cat.name)) ?? 0;
       const remaining = cat.limit - spent;
       return {
         category: cat.name,
@@ -72,6 +73,10 @@ function recalculateCategorySummary(
       };
     })
     .filter((cs) => cs.limit > 0 || cs.spent > 0);
+}
+
+function normalizeCategory(value: string): string {
+  return value.trim().replace(/\s+/g, ' ').toLocaleLowerCase();
 }
 
 function recalculateSummary(transactions: Transaction[], incomeSources: IncomeSource[]): Summary {

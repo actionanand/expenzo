@@ -4,10 +4,13 @@
   padding-bottom: 3rem;
 }
 
-.help-header {
+.help-navigation {
   position: sticky;
-  top: 0;
   z-index: 10;
+  top: 0;
+}
+
+.help-header {
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -55,9 +58,6 @@
   display: flex;
   background: var(--color-surface);
   border-bottom: 2px solid var(--color-border);
-  position: sticky;
-  top: calc(3.5rem + env(safe-area-inset-top));
-  z-index: 9;
 }
 
 @media (max-width: 640px) {
@@ -177,6 +177,82 @@
   line-height: 1.5;
 }
 
+.metric-list {
+  overflow: hidden;
+  margin-bottom: 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+}
+
+.metric-row {
+  display: grid;
+  grid-template-columns: minmax(8rem, 0.8fr) minmax(0, 1.8fr);
+  gap: 0.2rem 1rem;
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--color-border);
+
+  &:last-child {
+    border-bottom: 0;
+  }
+
+  dt {
+    color: var(--color-text);
+    font-size: 0.82rem;
+    font-weight: 700;
+  }
+
+  dd {
+    color: var(--color-text-secondary);
+    font-size: 0.78rem;
+    line-height: 1.5;
+  }
+
+  code {
+    grid-column: 2;
+    justify-self: start;
+    padding: 0.15rem 0.35rem;
+    border-radius: 3px;
+    color: var(--color-primary);
+    background: var(--color-primary-surface);
+    font-size: 0.7rem;
+  }
+}
+
+.calculation-example {
+  margin-bottom: 0.75rem;
+  padding: 0.7rem 0.85rem;
+  border-left: 3px solid var(--color-primary);
+  color: var(--color-text-secondary);
+  background: var(--color-surface);
+  font-size: 0.8rem;
+
+  p + p {
+    margin-top: 0.35rem;
+  }
+
+  strong {
+    color: var(--color-text);
+  }
+}
+
+.guide-list {
+  display: grid;
+  gap: 0.55rem;
+  padding-left: 1.15rem;
+  color: var(--color-text-secondary);
+  font-size: 0.82rem;
+  line-height: 1.5;
+
+  li::marker {
+    color: var(--color-primary);
+  }
+
+  strong {
+    color: var(--color-text);
+  }
+}
+
 // Tables
 .table-wrap {
   overflow-x: auto;
@@ -259,20 +335,20 @@
 }
 
 .alert-danger {
-  background: #fdecea;
-  color: #611a15;
+  color: var(--color-danger);
+  background: var(--color-danger-bg);
   border-left: 3px solid var(--color-danger);
 }
 
 .alert-info {
-  background: #e3f2fd;
-  color: #0d47a1;
-  border-left: 3px solid #2196f3;
+  color: var(--color-income);
+  background: var(--color-income-bg);
+  border-left: 3px solid var(--color-income);
 }
 
 .alert-success {
-  background: #e8f5e9;
-  color: #1b5e20;
+  color: var(--color-success);
+  background: var(--color-success-bg);
   border-left: 3px solid var(--color-primary);
 }
 
@@ -358,6 +434,16 @@
   font-weight: 600;
   color: var(--color-primary);
   white-space: nowrap;
+}
+
+@media (max-width: 520px) {
+  .metric-row {
+    grid-template-columns: 1fr;
+
+    code {
+      grid-column: 1;
+    }
+  }
 }
 
 // Structure grid

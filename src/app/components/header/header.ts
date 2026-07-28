@@ -29,6 +29,14 @@ import { ThemeToggle } from '../theme-toggle/theme-toggle';
             (cycleChange)="cycleChange.emit($event)"
           />
         }
+        <a
+          routerLink="/settings"
+          class="nav-link settings-link"
+          aria-label="Settings"
+          title="Settings"
+        >
+          <svg lucideIcon="settings-2" aria-hidden="true"></svg>
+        </a>
         <app-theme-toggle />
       </div>
     </header>
@@ -40,9 +48,9 @@ export class Header {
   readonly cycleChange = output<number>();
 
   protected readonly navItems = [
+    { route: '/transactions', label: 'Transactions', icon: 'arrow-left-right' },
     { route: '/stockpile', label: 'Stockpile wishlist', icon: 'shopping-basket' },
     { route: '/checklist', label: 'Checklist', icon: 'circle-check' },
     { route: '/help', label: 'Help and setup guide', icon: 'circle-help' },
-    { route: '/settings', label: 'Settings', icon: 'settings-2' },
   ] as const;
 }
