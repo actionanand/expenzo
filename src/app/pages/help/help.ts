@@ -247,12 +247,23 @@ type HelpTab = 'guide' | 'sheets' | 'android';
                 period such as 25 July through 24 August.
               </li>
               <li>
-                Use the previous and next arrows to review another cycle. The hero changes to
-                “Completed budget cycle” when viewing a past period.
+                Fixed choices 2, 3, and 28 run through the previous calendar day in the following
+                month. Last day and Second-last day adapt automatically for 28, 29, 30, and 31-day
+                months.
+              </li>
+              <li>
+                Use the previous and next arrows to review another cycle. Past periods show a Cycle
+                review with actual spend, budget use, daily average, category results, and a
+                comparison with the preceding cycle. Select an over-limit category result to reveal
+                the affected categories and their overage.
               </li>
               <li>
                 Changing the cycle start day changes how transactions are grouped; it does not alter
                 transaction dates or amounts.
+              </li>
+              <li>
+                Expenzo converts API timestamps to Indian Standard Time (Asia/Kolkata, UTC+05:30)
+                before assigning a transaction to a calendar day or budget cycle.
               </li>
               <li>
                 Category limits are added together to form the displayed total budget. Update the

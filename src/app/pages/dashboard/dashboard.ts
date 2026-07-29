@@ -24,6 +24,8 @@ import { transformToCycles } from '../../utils/cycle-transformer';
 import { CacheService } from '../../services/cache.service';
 import { SpendingPaceInsights } from '../../components/spending-pace-insights/spending-pace-insights';
 import { CyclePreferenceService } from '../../services/cycle-preference.service';
+import { CompletedCycleInsights } from '../../components/completed-cycle-insights/completed-cycle-insights';
+import { todayInIndia } from '../../utils/transaction-date';
 
 type ViewTab = 'month' | 'stats';
 
@@ -41,6 +43,7 @@ type ViewTab = 'month' | 'stats';
     Statistics,
     PullToRefresh,
     BudgetCycleHero,
+    CompletedCycleInsights,
     SpendingPaceInsights,
     ExportData,
   ],
@@ -64,10 +67,10 @@ type ViewTab = 'month' | 'stats';
       }
 
       <div class="dashboard-content">
-        @if (d.config.cycle; as cycle) {
+        @if (activeCyclePeriod(); as cycle) {
           <p class="cycle-period">
-            {{ cycle.from | date: 'dd MMM yyyy' }} &mdash;
-            {{ cycle.to | date: 'dd MMM yyyy' }}
+            {{ cycle.cycleFrom | date: 'dd MMM yyyy' }} &mdash;
+            {{ cycle.cycleTo | date: 'dd MMM yyyy' }}
           </p>
         }
 
@@ -109,6 +112,8 @@ type ViewTab = 'month' | 'stats';
             @if (isLatestCycle()) {
               <app-budget-cycle-hero [cycle]="cycle" />
               <app-spending-pace-insights [cycle]="cycle" />
+            } @else {
+              <app-completed-cycle-insights [cycle]="cycle" [previousCycle]="previousCycle()" />
             }
             <app-summary-cards [summary]="cycle.summary" [isLatest]="isLatestCycle()" />
             <app-category-breakdown
@@ -120,7 +125,7 @@ type ViewTab = 'month' | 'stats';
             <app-export-data [cycle]="cycle" />
           }
         } @else {
-          <app-statistics [cycles]="cycles()" />
+          <app-statistics [cycles]="cycles()" [activeCycleIndex]="selectedCycleIndex()" />
         }
       </div>
     }
@@ -148,10 +153,27 @@ export class Dashboard implements OnInit {
 
   protected readonly cycleLabels = computed(() => this.cycles().map((c) => c.label));
 
+  protected readonly activeCyclePeriod = computed<CycleData | null>(() => {
+    const today = todayInIndia();
+    return (
+      this.cycles().find(
+        (cycle) =>
+          today >= this.atStartOfDay(cycle.cycleFrom) && today <= this.atStartOfDay(cycle.cycleTo),
+      ) ??
+      this.cycles().at(-1) ??
+      null
+    );
+  });
+
   protected readonly selectedCycle = computed<CycleData | null>(() => {
     const all = this.cycles();
     const idx = this.selectedCycleIndex();
     return all[idx] ?? null;
+  });
+
+  protected readonly previousCycle = computed<CycleData | null>(() => {
+    const previousIndex = this.selectedCycleIndex() - 1;
+    return previousIndex >= 0 ? (this.cycles()[previousIndex] ?? null) : null;
   });
 
   ngOnInit(): void {
@@ -202,10 +224,14 @@ export class Dashboard implements OnInit {
 
   private applyData(response: ExpenseResponse): void {
     this.data.set(response);
-    const cycleData = transformToCycles(response);
+    const cycleData = transformToCycles(response, this.cycleStartDay());
     this.cycles.set(cycleData);
     const lastIndex = cycleData.length > 0 ? cycleData.length - 1 : 0;
     this.selectedCycleIndex.set(lastIndex);
     this.loading.set(false);
+  }
+
+  private atStartOfDay(value: Date): Date {
+    return new Date(value.getFullYear(), value.getMonth(), value.getDate());
   }
 }

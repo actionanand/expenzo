@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
 import { LucideDynamicIcon } from '@lucide/angular';
 
 import { CycleData } from '../../models/expense.model';
+import { todayInIndia } from '../../utils/transaction-date';
 
 const DAY_MS = 86_400_000;
 
@@ -67,7 +68,7 @@ export class BudgetCycleHero {
   protected readonly cycleStatus = computed<'upcoming' | 'active' | 'complete'>(() => {
     const start = this.atStartOfDay(this.cycle().cycleFrom);
     const end = this.atStartOfDay(this.cycle().cycleTo);
-    const today = this.atStartOfDay(new Date());
+    const today = todayInIndia();
     if (today < start) {
       return 'upcoming';
     }
@@ -123,7 +124,7 @@ export class BudgetCycleHero {
   protected readonly daysElapsed = computed(() => {
     const start = this.atStartOfDay(this.cycle().cycleFrom);
     const end = this.atStartOfDay(this.cycle().cycleTo);
-    const today = this.atStartOfDay(new Date());
+    const today = todayInIndia();
     if (today < start) {
       return 1;
     }
@@ -135,7 +136,7 @@ export class BudgetCycleHero {
   protected readonly daysRemaining = computed(() => {
     const start = this.atStartOfDay(this.cycle().cycleFrom);
     const end = this.atStartOfDay(this.cycle().cycleTo);
-    const today = this.atStartOfDay(new Date());
+    const today = todayInIndia();
     if (today < start) {
       return this.cycleDays();
     }

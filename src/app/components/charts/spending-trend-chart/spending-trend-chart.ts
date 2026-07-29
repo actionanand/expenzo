@@ -7,6 +7,11 @@ import { BaseChartDirective } from 'ng2-charts';
 
 import { CycleData } from '../../../models/expense.model';
 import { selectIsDark } from '../../../store/theme/theme.selectors';
+import {
+  formatIndiaDate,
+  parseTransactionDate,
+  todayInIndia,
+} from '../../../utils/transaction-date';
 
 interface SpendingPoint {
   readonly key: string;
@@ -26,7 +31,7 @@ interface SpendingPoint {
         <h2 id="spending-trend-title">Spending trend</h2>
       </header>
 
-      @if (points().length > 0) {
+      @if (hasSpending()) {
         <div class="chart-wrap">
           <canvas
             baseChart
@@ -69,16 +74,21 @@ interface SpendingPoint {
   styleUrl: './spending-trend-chart.scss',
 })
 export class SpendingTrendChart {
-  readonly cycles = input.required<CycleData[]>();
+  readonly cycles = input.required<readonly CycleData[]>();
   private readonly store = inject(Store);
   private readonly isDark = toSignal(this.store.select(selectIsDark), { initialValue: false });
 
   protected readonly points = computed<SpendingPoint[]>(() => {
+    const cycles = this.cycles();
+    if (cycles.length === 0) {
+      return [];
+    }
+
     const dailyAmounts = new Map<string, number>();
-    for (const cycle of this.cycles()) {
+    for (const cycle of cycles) {
       for (const transaction of cycle.transactions) {
-        const date = new Date(transaction.date);
-        if (Number.isNaN(date.getTime())) {
+        const date = parseTransactionDate(transaction.date);
+        if (!date) {
           continue;
         }
         const key = this.dateKey(date);
@@ -86,22 +96,44 @@ export class SpendingTrendChart {
       }
     }
 
+    const rangeStart = this.atStartOfDay(
+      cycles.reduce(
+        (earliest, cycle) => (cycle.cycleFrom < earliest ? cycle.cycleFrom : earliest),
+        cycles[0].cycleFrom,
+      ),
+    );
+    const cycleEnd = this.atStartOfDay(
+      cycles.reduce(
+        (latest, cycle) => (cycle.cycleTo > latest ? cycle.cycleTo : latest),
+        cycles[0].cycleTo,
+      ),
+    );
+    const today = todayInIndia();
+    const rangeEnd = today >= rangeStart && today < cycleEnd ? today : cycleEnd;
+
     let cumulative = 0;
-    return [...dailyAmounts.entries()]
-      .sort(([left], [right]) => left.localeCompare(right))
-      .map(([key, daily]) => {
-        cumulative += daily;
-        return {
-          key,
-          label: this.parseDateKey(key).toLocaleDateString('en-IN', {
-            day: 'numeric',
-            month: 'short',
-          }),
-          daily,
-          cumulative,
-        };
+    const points: SpendingPoint[] = [];
+    for (
+      let date = rangeStart;
+      date <= rangeEnd;
+      date = new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1)
+    ) {
+      const key = this.dateKey(date);
+      const daily = dailyAmounts.get(key) ?? 0;
+      cumulative += daily;
+      points.push({
+        key,
+        label: formatIndiaDate(date, {
+          day: 'numeric',
+          month: 'short',
+        }),
+        daily,
+        cumulative,
       });
+    }
+    return points;
   });
+  protected readonly hasSpending = computed(() => this.points().some((point) => point.daily > 0));
 
   protected readonly accessibleLabel = computed(() => {
     const points = this.points();
@@ -216,8 +248,7 @@ export class SpendingTrendChart {
     return `${year}-${month}-${day}`;
   }
 
-  private parseDateKey(value: string): Date {
-    const [year, month, day] = value.split('-').map(Number);
-    return new Date(year, month - 1, day);
+  private atStartOfDay(value: Date): Date {
+    return new Date(value.getFullYear(), value.getMonth(), value.getDate());
   }
 }

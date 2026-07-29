@@ -75,7 +75,7 @@ export interface AppSelectOption {
               <svg lucideIcon="x" aria-hidden="true"></svg>
             </button>
           </header>
-          <div role="listbox" [attr.aria-label]="sheetTitle() || label()">
+          <div class="picker-options" role="listbox" [attr.aria-label]="sheetTitle() || label()">
             @for (option of options(); track option.value) {
               <button
                 type="button"

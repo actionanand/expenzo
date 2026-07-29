@@ -1,12 +1,13 @@
 import { Component, ChangeDetectionStrategy, input, computed, signal } from '@angular/core';
-import { CurrencyPipe, DatePipe } from '@angular/common';
+import { CurrencyPipe } from '@angular/common';
 
 import { Transaction } from '../../models/expense.model';
+import { formatIndiaDate, transactionTimestamp } from '../../utils/transaction-date';
 
 @Component({
   selector: 'app-transactions-list',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CurrencyPipe, DatePipe],
+  imports: [CurrencyPipe],
   template: `
     <section class="transactions-section">
       <h2 class="section-title">Recent Transactions</h2>
@@ -17,7 +18,7 @@ import { Transaction } from '../../models/expense.model';
               <span class="tx-name">{{ tx.name }}</span>
               <span class="tx-meta">
                 <span class="tx-category">{{ tx.category }}</span>
-                <span class="tx-date">{{ tx.date | date: 'dd MMM' }}</span>
+                <span class="tx-date">{{ formatDate(tx.date) }}</span>
               </span>
             </div>
             <span class="tx-amount">{{
@@ -43,7 +44,7 @@ export class TransactionsList {
 
   protected readonly sortedTransactions = computed(() =>
     [...this.transactions()].sort(
-      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+      (a, b) => transactionTimestamp(b.date) - transactionTimestamp(a.date),
     ),
   );
 
@@ -61,5 +62,9 @@ export class TransactionsList {
 
   protected loadMore(): void {
     this.visibleCount.update((c) => c + this.PAGE_SIZE);
+  }
+
+  protected formatDate(value: string): string {
+    return formatIndiaDate(value, { day: '2-digit', month: 'short' });
   }
 }

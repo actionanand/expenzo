@@ -1,4 +1,4 @@
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
 const appPackage = 'com.actionanand.expenzo.app';
@@ -7,10 +7,17 @@ const mainActivityPath = join(javaDir, 'MainActivity.java');
 const exportPluginPath = join(javaDir, 'ExpenzoExportPlugin.java');
 const manifestPath = join('android', 'app', 'src', 'main', 'AndroidManifest.xml');
 const gradlePath = join('android', 'app', 'build.gradle');
+const resourcesDir = join('android', 'app', 'src', 'main', 'res');
 const filePathsPath = join('android', 'app', 'src', 'main', 'res', 'xml', 'expenzo_file_paths.xml');
 
 mkdirSync(javaDir, { recursive: true });
 mkdirSync(dirname(filePathsPath), { recursive: true });
+
+function writeResource(relativePath, content) {
+  const path = join(resourcesDir, relativePath);
+  mkdirSync(dirname(path), { recursive: true });
+  writeFileSync(path, content);
+}
 
 writeFileSync(
   exportPluginPath,
@@ -745,6 +752,112 @@ public class MainActivity extends BridgeActivity {
 `,
 );
 
+const lightStyles = `<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="AppTheme" parent="Theme.AppCompat.DayNight.NoActionBar">
+        <item name="colorPrimary">#2E7D32</item>
+        <item name="colorPrimaryDark">#1B5E20</item>
+        <item name="colorAccent">#4CAF50</item>
+        <item name="android:fontFamily">sans</item>
+        <item name="android:windowActionModeOverlay">true</item>
+        <item name="android:windowNoTitle">true</item>
+    </style>
+    <style name="AppTheme.NoActionBar" parent="Theme.AppCompat.DayNight.NoActionBar">
+        <item name="android:windowBackground">#F1F8E9</item>
+        <item name="android:statusBarColor">#F1F8E9</item>
+        <item name="android:navigationBarColor">#F1F8E9</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
+        <item name="android:windowActionModeOverlay">true</item>
+        <item name="android:windowNoTitle">true</item>
+    </style>
+    <style name="AppTheme.NoActionBarLaunch" parent="AppTheme.NoActionBar">
+        <item name="android:windowBackground">@drawable/expenzo_splash_screen</item>
+        <item name="android:statusBarColor">#0D1B0D</item>
+        <item name="android:navigationBarColor">#0D1B0D</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+    </style>
+</resources>`;
+
+const darkStyles = lightStyles
+  .replaceAll('#F1F8E9', '#0D1B0D')
+  .replaceAll(
+    '<item name="android:windowLightStatusBar">true</item>',
+    '<item name="android:windowLightStatusBar">false</item>',
+  )
+  .replaceAll(
+    '<item name="android:windowLightNavigationBar">true</item>',
+    '<item name="android:windowLightNavigationBar">false</item>',
+  );
+
+const lightAndroid12Styles = `<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="AppTheme" parent="Theme.AppCompat.DayNight.NoActionBar">
+        <item name="colorPrimary">#2E7D32</item>
+        <item name="colorPrimaryDark">#1B5E20</item>
+        <item name="colorAccent">#4CAF50</item>
+        <item name="android:windowNoTitle">true</item>
+    </style>
+    <style name="AppTheme.NoActionBar" parent="Theme.AppCompat.DayNight.NoActionBar">
+        <item name="android:windowBackground">#F1F8E9</item>
+        <item name="android:statusBarColor">#F1F8E9</item>
+        <item name="android:navigationBarColor">#F1F8E9</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
+        <item name="android:windowNoTitle">true</item>
+    </style>
+    <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">#0D1B0D</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/expenzo_splash_icon</item>
+        <item name="windowSplashScreenIconBackgroundColor">@android:color/transparent</item>
+        <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
+        <item name="android:statusBarColor">#0D1B0D</item>
+        <item name="android:navigationBarColor">#0D1B0D</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+    </style>
+</resources>`;
+
+const darkAndroid12Styles = lightAndroid12Styles
+  .replaceAll('#F1F8E9', '#0D1B0D')
+  .replaceAll(
+    '<item name="android:windowLightStatusBar">true</item>',
+    '<item name="android:windowLightStatusBar">false</item>',
+  )
+  .replaceAll(
+    '<item name="android:windowLightNavigationBar">true</item>',
+    '<item name="android:windowLightNavigationBar">false</item>',
+  );
+
+writeResource('values/styles.xml', lightStyles);
+writeResource('values-night/styles.xml', darkStyles);
+writeResource('values-v31/styles.xml', lightAndroid12Styles);
+writeResource('values-night-v31/styles.xml', darkAndroid12Styles);
+writeResource(
+  'values/expenzo_colours.xml',
+  '<?xml version="1.0" encoding="utf-8"?><resources><color name="expenzo_splash_background">#0D1B0D</color></resources>',
+);
+writeResource(
+  'drawable/expenzo_splash_icon.xml',
+  `<?xml version="1.0" encoding="utf-8"?>
+<inset xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/expenzo_splash_logo"
+    android:inset="28%" />`,
+);
+writeResource(
+  'drawable/expenzo_splash_screen.xml',
+  `<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@color/expenzo_splash_background" />
+    <item android:gravity="center">
+        <inset android:drawable="@drawable/expenzo_splash_icon" android:inset="34%" />
+    </item>
+</layer-list>`,
+);
+mkdirSync(join(resourcesDir, 'drawable-nodpi'), { recursive: true });
+copyFileSync('public/expenzo.png', join(resourcesDir, 'drawable-nodpi', 'expenzo_splash_logo.png'));
+
 let manifest = readFileSync(manifestPath, 'utf8');
 if (!manifest.includes('android.permission.USE_BIOMETRIC')) {
   manifest = manifest.replace(
@@ -752,6 +865,10 @@ if (!manifest.includes('android.permission.USE_BIOMETRIC')) {
     '    <uses-permission android:name="android.permission.USE_BIOMETRIC" />\n\n    <application',
   );
 }
+manifest = manifest.replace(
+  /(<activity\b(?=[^>]*android:name="\.MainActivity")[^>]*android:theme=")[^"]*(")/,
+  '$1@style/AppTheme.NoActionBarLaunch$2',
+);
 if (!/android:name="androidx\.core\.content\.FileProvider"/.test(manifest)) {
   manifest = manifest.replace(
     /<\/application>/,
@@ -779,4 +896,4 @@ if (!gradle.includes('androidx.biometric:biometric')) {
   writeFileSync(gradlePath, gradle);
 }
 
-console.log('Android export, system bar, and biometric support patched.');
+console.log('Android splash, export, system bar, and biometric support patched.');

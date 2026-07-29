@@ -2,6 +2,7 @@ import { Component, ChangeDetectionStrategy, input, computed } from '@angular/co
 import { CurrencyPipe } from '@angular/common';
 
 import { CycleData } from '../../models/expense.model';
+import { todayInIndia } from '../../utils/transaction-date';
 
 @Component({
   selector: 'app-daily-average',
@@ -44,15 +45,13 @@ export class DailyAverage {
 
   protected readonly totalDays = computed(() => {
     const c = this.cycle();
-    const diff = c.cycleTo.getTime() - c.cycleFrom.getTime();
-    return Math.max(Math.ceil(diff / (1000 * 60 * 60 * 24)), 1);
+    return this.dayDifference(c.cycleFrom, c.cycleTo) + 1;
   });
 
   protected readonly daysElapsed = computed(() => {
     const c = this.cycle();
-    const now = new Date();
-    const elapsed = now.getTime() - c.cycleFrom.getTime();
-    const days = Math.ceil(elapsed / (1000 * 60 * 60 * 24));
+    const now = todayInIndia();
+    const days = this.dayDifference(c.cycleFrom, now) + 1;
     return Math.max(Math.min(days, this.totalDays()), 1);
   });
 
@@ -67,4 +66,10 @@ export class DailyAverage {
   });
 
   protected readonly isOnPace = computed(() => this.dailyAvg() <= this.idealDailySpend());
+
+  private dayDifference(from: Date, to: Date): number {
+    const fromUtc = Date.UTC(from.getFullYear(), from.getMonth(), from.getDate());
+    const toUtc = Date.UTC(to.getFullYear(), to.getMonth(), to.getDate());
+    return Math.max(0, Math.round((toUtc - fromUtc) / 86_400_000));
+  }
 }
