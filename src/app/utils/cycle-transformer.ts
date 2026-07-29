@@ -8,6 +8,8 @@ import {
   Summary,
   Transaction,
 } from '../models/expense.model';
+import { cycleStartDate } from './cycle-start';
+import { parseTransactionDate } from './transaction-date';
 
 const MONTH_NAMES = [
   'Jan',
@@ -94,7 +96,7 @@ function recalculateSummary(transactions: Transaction[], incomeSources: IncomeSo
 }
 
 /**
- * When cycleStartDay=1 (or dev mode), maps each API month directly to a CycleData.
+ * When cycleStartDay=1, maps each API month directly to a CycleData.
  */
 function mapDirectly(months: MonthData[]): CycleData[] {
   const cycles = months.map((m) => {
@@ -160,15 +162,14 @@ function sliceIntoCycles(
       prevYear--;
     }
 
-    const cycleFrom = new Date(prevYear, prevMonth, startDay);
-    const cycleTo = new Date(pm.year, pm.month, startDay - 1, 23, 59, 59, 999);
-    // Exclusive upper bound for filtering
-    const cycleNextFrom = new Date(pm.year, pm.month, startDay);
+    const cycleFrom = cycleStartDate(prevYear, prevMonth, startDay);
+    const cycleNextFrom = cycleStartDate(pm.year, pm.month, startDay);
+    const cycleTo = new Date(cycleNextFrom.getTime() - 1);
 
     // Slice transactions by local date
     const txns = allTransactions.filter((t) => {
-      const d = new Date(t.date);
-      return d >= cycleFrom && d < cycleNextFrom;
+      const date = parseTransactionDate(t.date);
+      return date !== null && date >= cycleFrom && date < cycleNextFrom;
     });
 
     // Income: from the month containing cycle start (prevMonth)
@@ -199,13 +200,13 @@ function sliceIntoCycles(
       a.year !== b.year ? a.year - b.year : a.month - b.month,
     )[parsedMonths.length - 1];
 
-    const nextCycleFrom = new Date(latestPm.year, latestPm.month, startDay);
-    const nextCycleTo = new Date(latestPm.year, latestPm.month + 1, startDay - 1, 23, 59, 59, 999);
-    const nextCycleNextFrom = new Date(latestPm.year, latestPm.month + 1, startDay);
+    const nextCycleFrom = cycleStartDate(latestPm.year, latestPm.month, startDay);
+    const nextCycleNextFrom = cycleStartDate(latestPm.year, latestPm.month + 1, startDay);
+    const nextCycleTo = new Date(nextCycleNextFrom.getTime() - 1);
 
     const remainingTxns = allTransactions.filter((t) => {
-      const d = new Date(t.date);
-      return d >= nextCycleFrom && d < nextCycleNextFrom;
+      const date = parseTransactionDate(t.date);
+      return date !== null && date >= nextCycleFrom && date < nextCycleNextFrom;
     });
 
     if (remainingTxns.length > 0) {
@@ -236,11 +237,14 @@ function sliceIntoCycles(
 /**
  * Transforms the raw API response into cycle-based data that the UI consumes.
  */
-export function transformToCycles(response: ExpenseResponse): CycleData[] {
+export function transformToCycles(
+  response: ExpenseResponse,
+  selectedCycleStart = response.config.cycleStartDay,
+): CycleData[] {
   const { config, months } = response;
-  const startDay = config.cycleStartDay;
+  const startDay = selectedCycleStart;
 
-  if (startDay === 1 || response.isDevelopment) {
+  if (startDay === 1) {
     return mapDirectly(months);
   }
 

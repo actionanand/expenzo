@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 
 import { environment } from '../../environments/environment';
 import { ExpenseResponse } from '../models/expense.model';
+import { apiCycleStart } from '../utils/cycle-start';
 
 @Injectable({ providedIn: 'root' })
 export class ExpenseService {
@@ -12,7 +13,7 @@ export class ExpenseService {
   getExpenses(cycleStartDay?: number): Observable<ExpenseResponse> {
     let params = new HttpParams().set('token', environment.token);
     const day = cycleStartDay ?? environment.defaultCycleStartDay;
-    params = params.set('cycleStartDay', day.toString());
+    params = params.set('cycleStartDay', apiCycleStart(day).toString());
 
     return this.http.get<ExpenseResponse>(environment.apiUrl, { params });
   }

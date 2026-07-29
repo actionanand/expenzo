@@ -4,6 +4,7 @@ import { LucideDynamicIcon } from '@lucide/angular';
 import { AppSelectOption, AppSelectPicker } from '../app-select-picker/app-select-picker';
 import { CycleData, Transaction } from '../../models/expense.model';
 import { FileExportService } from '../../services/file-export.service';
+import { formatIndiaDate, todayInIndia, transactionTimestamp } from '../../utils/transaction-date';
 
 type ExportScope = 'current' | 'range' | 'all';
 
@@ -152,7 +153,7 @@ export class TransactionExport {
   );
   protected readonly currentCycle = computed(() => {
     const cycles = this.cycles();
-    const today = this.atStartOfDay(new Date());
+    const today = todayInIndia();
     return (
       cycles.find(
         (cycle) =>
@@ -205,8 +206,8 @@ export class TransactionExport {
       )
       .sort(
         (left, right) =>
-          this.transactionTimestamp(right.transaction.date) -
-          this.transactionTimestamp(left.transaction.date),
+          transactionTimestamp(right.transaction.date) -
+          transactionTimestamp(left.transaction.date),
       );
   });
   protected readonly exportTotal = computed(() =>
@@ -442,21 +443,11 @@ export class TransactionExport {
   }
 
   private formatTransactionDate(value: string): string {
-    const timestamp = this.transactionTimestamp(value);
-    return Number.isFinite(timestamp) ? this.formatShortDate(new Date(timestamp)) : value;
-  }
-
-  private transactionTimestamp(value: string): number {
-    const timestamp = Date.parse(value);
-    if (Number.isFinite(timestamp)) {
-      return timestamp;
-    }
-    const match = /^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/.exec(value.trim());
-    if (!match) {
-      return Number.NaN;
-    }
-    const [, day, month, year] = match;
-    return new Date(Number(year), Number(month) - 1, Number(day)).getTime();
+    return formatIndiaDate(value, {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    });
   }
 
   private normalizeCategory(value: string): string {

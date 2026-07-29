@@ -22,6 +22,7 @@ import { CacheService } from '../../services/cache.service';
 import { CyclePreferenceService } from '../../services/cycle-preference.service';
 import { ExpenseService } from '../../services/expense.service';
 import { transformToCycles } from '../../utils/cycle-transformer';
+import { formatIndiaDate, todayInIndia, transactionTimestamp } from '../../utils/transaction-date';
 
 interface TransactionCycleGroup {
   readonly key: string;
@@ -267,7 +268,7 @@ export class Transactions implements OnInit {
   );
   protected readonly currentCycle = computed(() => {
     const cycles = this.cycles();
-    const today = this.atStartOfDay(new Date());
+    const today = todayInIndia();
     return (
       cycles.find(
         (cycle) =>
@@ -320,8 +321,7 @@ export class Transactions implements OnInit {
             return categoryMatches && searchMatches;
           })
           .sort(
-            (left, right) =>
-              this.transactionTimestamp(right.date) - this.transactionTimestamp(left.date),
+            (left, right) => transactionTimestamp(right.date) - transactionTimestamp(left.date),
           );
 
         return {
@@ -428,19 +428,15 @@ export class Transactions implements OnInit {
   }
 
   protected formatTransactionDate(value: string): string {
-    const timestamp = this.transactionTimestamp(value);
-    if (!Number.isFinite(timestamp)) {
-      return value;
-    }
-    return new Intl.DateTimeFormat('en-IN', {
+    return formatIndiaDate(value, {
       day: '2-digit',
       month: 'short',
       year: 'numeric',
-    }).format(new Date(timestamp));
+    });
   }
 
   private applyData(response: ExpenseResponse): void {
-    this.cycles.set(transformToCycles(response));
+    this.cycles.set(transformToCycles(response, this.cycleStartDay()));
     this.isDevelopment.set(response.isDevelopment);
     this.loading.set(false);
     if (this.hasActiveFilters()) {
@@ -473,20 +469,5 @@ export class Transactions implements OnInit {
 
   private capitalizeCategory(category: string): string {
     return category.charAt(0).toLocaleUpperCase() + category.slice(1);
-  }
-
-  private transactionTimestamp(value: string): number {
-    const timestamp = Date.parse(value);
-    if (Number.isFinite(timestamp)) {
-      return timestamp;
-    }
-
-    const match = /^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/.exec(value.trim());
-    if (!match) {
-      return Number.NaN;
-    }
-
-    const [, day, month, year] = match;
-    return new Date(Number(year), Number(month) - 1, Number(day)).getTime();
   }
 }

@@ -47,7 +47,7 @@ interface RangeOption {
       <app-spending-trend-chart [cycles]="filteredCycles()" />
 
       @if (selectedRange() === 'current') {
-        <app-expense-pie-chart [allCycles]="cycles()" />
+        <app-expense-pie-chart [allCycles]="filteredCycles()" />
       } @else {
         @if (filteredCycles().length > 0) {
           <app-overview-stats [allMonths]="filteredCycles()" />
@@ -67,37 +67,46 @@ interface RangeOption {
   styleUrl: './statistics.scss',
 })
 export class Statistics {
-  readonly cycles = input.required<CycleData[]>();
+  readonly cycles = input.required<readonly CycleData[]>();
+  readonly activeCycleIndex = input<number | null>(null);
 
   protected readonly selectedRange = signal<RangeKey>('current');
 
   protected readonly rangeOptions: RangeOption[] = [
-    { key: 'current', label: 'This Month' },
+    { key: 'current', label: 'Selected' },
     { key: '3m', label: '3 Months' },
     { key: '6m', label: '6 Months' },
     { key: '1y', label: '1 Year' },
     { key: 'all', label: 'All' },
   ];
 
-  protected readonly currentCycle = computed<CycleData | null>(() => {
+  protected readonly rangeEndIndex = computed(() => {
     const all = this.cycles();
-    return all.length > 0 ? all[all.length - 1] : null;
+    const requested = this.activeCycleIndex();
+    if (requested === null) {
+      return all.length - 1;
+    }
+    return Math.min(Math.max(0, requested), all.length - 1);
   });
 
   protected readonly filteredCycles = computed<CycleData[]>(() => {
     const all = this.cycles();
     const range = this.selectedRange();
-
-    if (range === 'current') {
-      return all.length > 0 ? [all[all.length - 1]] : [];
+    const end = this.rangeEndIndex();
+    if (all.length === 0 || end < 0) {
+      return [];
     }
 
-    let count = all.length;
+    if (range === 'current') {
+      return [all[end]];
+    }
+
+    let count = end + 1;
     if (range === '3m') count = 3;
     else if (range === '6m') count = 6;
     else if (range === '1y') count = 12;
 
-    return all.slice(-Math.min(count, all.length));
+    return all.slice(Math.max(0, end - count + 1), end + 1);
   });
 
   protected readonly rangeTitle = computed(() => {

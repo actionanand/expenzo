@@ -1,12 +1,13 @@
 import { Component, ChangeDetectionStrategy, input, signal } from '@angular/core';
-import { CurrencyPipe, DatePipe } from '@angular/common';
+import { CurrencyPipe } from '@angular/common';
 
 import { CategorySummary, Transaction } from '../../models/expense.model';
+import { formatIndiaDate } from '../../utils/transaction-date';
 
 @Component({
   selector: 'app-category-breakdown',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CurrencyPipe, DatePipe],
+  imports: [CurrencyPipe],
   template: `
     <section class="category-section">
       <h2 class="section-title">Category Breakdown</h2>
@@ -54,7 +55,7 @@ import { CategorySummary, Transaction } from '../../models/expense.model';
                   <div class="cat-tx-item">
                     <div class="cat-tx-info">
                       <span class="cat-tx-name">{{ tx.name }}</span>
-                      <span class="cat-tx-date">{{ tx.date | date: 'dd MMM' }}</span>
+                      <span class="cat-tx-date">{{ formatDate(tx.date) }}</span>
                     </div>
                     <span class="cat-tx-price">{{
                       tx.price | currency: 'INR' : 'symbol-narrow' : '1.0-0'
@@ -89,5 +90,9 @@ export class CategoryBreakdown {
   protected getProgress(cat: CategorySummary): number {
     if (cat.limit === 0) return 0;
     return Math.min((cat.spent / cat.limit) * 100, 100);
+  }
+
+  protected formatDate(value: string): string {
+    return formatIndiaDate(value, { day: '2-digit', month: 'short' });
   }
 }

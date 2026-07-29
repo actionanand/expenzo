@@ -3,6 +3,7 @@ import { LucideDynamicIcon } from '@lucide/angular';
 
 import { CycleData, Transaction } from '../../models/expense.model';
 import { FileExportService } from '../../services/file-export.service';
+import { formatIndiaDate } from '../../utils/transaction-date';
 
 @Component({
   selector: 'app-export-data',
@@ -165,8 +166,11 @@ export class ExportData {
   }
 
   private formatDate(value: string): string {
-    const date = new Date(value);
-    return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString('en-IN');
+    return formatIndiaDate(value, {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    });
   }
 
   private formatCurrency(value: number): string {

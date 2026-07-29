@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { NgOptimizedImage } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { LucideDynamicIcon } from '@lucide/angular';
 
@@ -8,10 +9,13 @@ import { ThemeToggle } from '../theme-toggle/theme-toggle';
 @Component({
   selector: 'app-header',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CycleSelector, LucideDynamicIcon, RouterLink, ThemeToggle],
+  imports: [CycleSelector, LucideDynamicIcon, NgOptimizedImage, RouterLink, ThemeToggle],
   template: `
     <header class="app-header">
-      <a routerLink="/" class="app-title" aria-label="Expenzo home">Expenzo</a>
+      <a routerLink="/" class="app-title" aria-label="Expenzo home">
+        <img ngSrc="expenzo.png" width="32" height="32" alt="" priority />
+        <span>Expenzo</span>
+      </a>
       <div class="header-actions">
         @for (item of navItems; track item.route) {
           <a
