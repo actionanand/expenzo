@@ -8,6 +8,13 @@ import {
   AppSelectPicker,
 } from '../../components/app-select-picker/app-select-picker';
 import { AppLockService } from '../../services/app-lock.service';
+import {
+  COUNTRY_CURRENCY_OPTIONS,
+  CurrencyPreferencesService,
+  DISPLAY_CURRENCY_CODES,
+  currencyLabel,
+  currencySymbol,
+} from '../../services/currency-preferences.service';
 import { SecuritySettingsService } from '../../services/security-settings.service';
 import { SecurityService } from '../../services/security.service';
 
@@ -40,6 +47,52 @@ import { SecurityService } from '../../services/security.service';
         </header>
 
         <div class="settings-body">
+          <section class="settings-section" aria-labelledby="currency-title">
+            <header>
+              <span class="section-icon" aria-hidden="true">
+                <svg lucideIcon="coins"></svg>
+              </span>
+              <div>
+                <h2 id="currency-title">Country & currency</h2>
+                <p>Choose how amounts appear. Values are not converted.</p>
+              </div>
+            </header>
+
+            <div class="setting-rows currency-rows">
+              <div class="setting-row picker-row">
+                <span>
+                  <strong>Country or region</strong>
+                  <small>Sets the usual currency and number format</small>
+                </span>
+                <app-select-picker
+                  label="Country or region"
+                  sheetTitle="Choose country or region"
+                  searchPlaceholder="Search country or currency"
+                  [searchable]="true"
+                  [options]="countryOptions"
+                  [value]="currency.countryCode()"
+                  (valueChange)="changeCountry($event)"
+                />
+              </div>
+
+              <div class="setting-row picker-row">
+                <span>
+                  <strong>Display currency</strong>
+                  <small>Changes symbols only, without exchange-rate conversion</small>
+                </span>
+                <app-select-picker
+                  label="Display currency"
+                  sheetTitle="Choose display currency"
+                  searchPlaceholder="Search currency name or code"
+                  [searchable]="true"
+                  [options]="currencyOptions"
+                  [value]="currency.currencyCode()"
+                  (valueChange)="changeCurrency($event)"
+                />
+              </div>
+            </div>
+          </section>
+
           <section class="settings-section" aria-labelledby="security-title">
             <header>
               <span class="section-icon" aria-hidden="true">
@@ -230,6 +283,7 @@ export class Settings {
   protected readonly settings = inject(SecuritySettingsService);
   protected readonly security = inject(SecurityService);
   protected readonly lock = inject(AppLockService);
+  protected readonly currency = inject(CurrencyPreferencesService);
   private readonly formBuilder = inject(FormBuilder);
 
   protected readonly pinDialogOpen = signal(false);
@@ -237,6 +291,20 @@ export class Settings {
   protected readonly formError = signal('');
   protected readonly savingPin = signal(false);
   protected readonly message = signal('');
+  protected readonly countryOptions: readonly AppSelectOption[] = COUNTRY_CURRENCY_OPTIONS.map(
+    (option) => ({
+      value: option.countryCode,
+      label: option.countryName,
+      detail: `${option.currencyCode} · ${currencyLabel(option.currencyCode)}`,
+    }),
+  );
+  protected readonly currencyOptions: readonly AppSelectOption[] = DISPLAY_CURRENCY_CODES.map(
+    (currencyCode) => ({
+      value: currencyCode,
+      label: `${currencyLabel(currencyCode)} (${currencyCode})`,
+      detail: currencySymbol(currencyCode, 'US'),
+    }),
+  );
   protected readonly pinForm = this.formBuilder.nonNullable.group({
     pin: ['', [Validators.required, Validators.pattern(/^\d{4,8}$/)]],
     confirmation: ['', [Validators.required, Validators.pattern(/^\d{4,8}$/)]],
@@ -341,6 +409,16 @@ export class Settings {
 
   protected changeAutoLock(value: string): void {
     this.settings.update({ autoLockMinutes: value === 'never' ? null : Number(value) });
+  }
+
+  protected changeCountry(countryCode: string): void {
+    this.currency.setCountry(countryCode);
+    this.showMessage(`Display changed to ${currencyLabel(this.currency.currencyCode())}.`);
+  }
+
+  protected changeCurrency(currencyCode: string): void {
+    this.currency.setCurrency(currencyCode);
+    this.showMessage(`Display changed to ${currencyLabel(this.currency.currencyCode())}.`);
   }
 
   protected toggleLockInBackground(): void {

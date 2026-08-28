@@ -3,6 +3,7 @@ import { LucideDynamicIcon } from '@lucide/angular';
 
 import { CycleData, Transaction } from '../../models/expense.model';
 import { FileExportService } from '../../services/file-export.service';
+import { CurrencyPreferencesService } from '../../services/currency-preferences.service';
 import { formatIndiaDate } from '../../utils/transaction-date';
 
 @Component({
@@ -38,6 +39,7 @@ import { formatIndiaDate } from '../../utils/transaction-date';
 })
 export class ExportData {
   private readonly fileExport = inject(FileExportService);
+  private readonly currency = inject(CurrencyPreferencesService);
 
   readonly cycle = input.required<CycleData>();
 
@@ -174,7 +176,7 @@ export class ExportData {
   }
 
   private formatCurrency(value: number): string {
-    return `INR ${value.toLocaleString('en-IN')}`;
+    return this.currency.formatForDocument(value);
   }
 
   private csvCell(value: string): string {

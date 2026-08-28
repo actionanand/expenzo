@@ -85,9 +85,24 @@
 }
 
 .settings-body {
+  display: grid;
   min-height: 0;
+  gap: 1rem;
   padding: 1rem;
   overflow-y: auto;
+}
+
+.picker-row {
+  align-items: flex-start;
+
+  > span {
+    padding-top: 0.35rem;
+  }
+
+  app-select-picker {
+    width: min(100%, 18rem);
+    flex: 0 1 18rem;
+  }
 }
 
 .settings-section {
@@ -420,7 +435,16 @@
     flex-direction: column;
   }
 
-  .select-row app-select-picker {
+  .picker-row {
+    flex-direction: column;
+
+    > span {
+      padding-top: 0;
+    }
+  }
+
+  .select-row app-select-picker,
+  .picker-row app-select-picker {
     width: 100%;
     flex-basis: auto;
   }

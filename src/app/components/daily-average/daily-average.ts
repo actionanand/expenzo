@@ -1,28 +1,24 @@
 import { Component, ChangeDetectionStrategy, input, computed } from '@angular/core';
-import { CurrencyPipe } from '@angular/common';
 
 import { CycleData } from '../../models/expense.model';
+import { MoneyPipe } from '../../pipes/money.pipe';
 import { todayInIndia } from '../../utils/transaction-date';
 
 @Component({
   selector: 'app-daily-average',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CurrencyPipe],
+  imports: [MoneyPipe],
   template: `
     <section class="daily-avg-section">
       <div class="daily-avg-card">
         <div class="daily-avg-header">
           <span class="daily-avg-label">Daily Average</span>
-          <span class="daily-avg-value">{{
-            dailyAvg() | currency: 'INR' : 'symbol-narrow' : '1.0-0'
-          }}</span>
+          <span class="daily-avg-value">{{ dailyAvg() | money }}</span>
         </div>
         <div class="daily-avg-details">
           <div class="avg-row">
             <span class="avg-key">Ideal pace</span>
-            <span class="avg-val ideal">{{
-              idealDailySpend() | currency: 'INR' : 'symbol-narrow' : '1.0-0'
-            }}</span>
+            <span class="avg-val ideal">{{ idealDailySpend() | money }}</span>
           </div>
           <div class="avg-row">
             <span class="avg-key">Days elapsed</span>

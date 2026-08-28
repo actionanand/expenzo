@@ -2,12 +2,14 @@ import { Component, ChangeDetectionStrategy, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { LucideDynamicIcon } from '@lucide/angular';
 
+import { MoneyPipe } from '../../pipes/money.pipe';
+
 type HelpTab = 'guide' | 'sheets' | 'android';
 
 @Component({
   selector: 'app-help',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [LucideDynamicIcon, RouterLink],
+  imports: [LucideDynamicIcon, MoneyPipe, RouterLink],
   template: `
     <div class="help-page">
       <div class="help-navigation">
@@ -188,16 +190,21 @@ type HelpTab = 'guide' | 'sheets' | 'android';
           <section class="help-section">
             <h2 class="section-heading">Worked Example</h2>
             <p class="section-desc">
-              With ₹32,000 income, ₹24,591 expenses, and ₹24,800 in category budgets:
+              With {{ 32000 | money }} income, {{ 24591 | money }} expenses, and
+              {{ 24800 | money }} in category budgets:
             </p>
             <div class="calculation-example">
-              <p><strong>Balance:</strong> ₹32,000 - ₹24,591 = <strong>₹7,409</strong></p>
               <p>
-                <strong>Available to spend:</strong> ₹24,800 - ₹24,591 =
-                <strong>₹209</strong>
+                <strong>Balance:</strong> {{ 32000 | money }} - {{ 24591 | money }} =
+                <strong>{{ 7409 | money }}</strong>
               </p>
               <p>
-                <strong>Budget used:</strong> ₹24,591 / ₹24,800 = approximately
+                <strong>Available to spend:</strong> {{ 24800 | money }} - {{ 24591 | money }} =
+                <strong>{{ 209 | money }}</strong>
+              </p>
+              <p>
+                <strong>Budget used:</strong> {{ 24591 | money }} / {{ 24800 | money }} =
+                approximately
                 <strong>99%</strong>
               </p>
             </div>
@@ -216,27 +223,49 @@ type HelpTab = 'guide' | 'sheets' | 'android';
           <section class="help-section">
             <h2 class="section-heading">Daily Pace Example</h2>
             <p class="section-desc">
-              For ₹60,000 income, an ₹8,000 category budget, and a 30-day cycle:
+              For {{ 60000 | money }} income, an {{ 8000 | money }} category budget, and a 30-day
+              cycle:
             </p>
             <div class="calculation-example">
               <p>
-                <strong>Income capacity:</strong> ₹60,000 / 30 =
-                <strong>₹2,000 per day</strong>
+                <strong>Income capacity:</strong> {{ 60000 | money }} / 30 =
+                <strong>{{ 2000 | money }} per day</strong>
               </p>
               <p>
-                <strong>Budget allowance:</strong> ₹8,000 / 30 =
-                <strong>approximately ₹267 per day</strong>
+                <strong>Budget allowance:</strong> {{ 8000 | money }} / 30 =
+                <strong>approximately {{ 267 | money }} per day</strong>
               </p>
               <p>
                 <strong>After 3 elapsed days:</strong> income capacity is
-                <strong>₹6,000</strong> and budget allowance is <strong>₹800</strong>.
+                <strong>{{ 6000 | money }}</strong> and budget allowance is
+                <strong>{{ 800 | money }}</strong
+                >.
               </p>
             </div>
             <p class="section-desc">
-              If actual spent after those three days is ₹900, Expenzo shows ₹5,100 left against
-              income capacity, but ₹100 over the budget pace. The two results are deliberately
-              separate because income and budget answer different questions.
+              If actual spent after those three days is {{ 900 | money }}, Expenzo shows
+              {{ 5100 | money }} left against income capacity, but {{ 100 | money }} over the budget
+              pace. The two results are deliberately separate because income and budget answer
+              different questions.
             </p>
+          </section>
+
+          <section class="help-section">
+            <h2 class="section-heading">Country and Display Currency</h2>
+            <p class="section-desc">
+              Settings lets you choose a country or a display currency. Changing the country picks
+              its usual currency; changing the currency updates the country when needed.
+            </p>
+            <div class="alert alert-info">
+              <svg class="alert-icon" lucideIcon="coins" aria-hidden="true"></svg>
+              <div>
+                <strong>Display only</strong>
+                <p>
+                  Expenzo changes the symbol and number formatting only. It does not convert values
+                  using exchange rates. A stored value of 1,000 remains 1,000 in every currency.
+                </p>
+              </div>
+            </div>
           </section>
 
           <section class="help-section">

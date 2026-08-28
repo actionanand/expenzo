@@ -1,7 +1,8 @@
 import { Component, ChangeDetectionStrategy, input, computed } from '@angular/core';
-import { CurrencyPipe, PercentPipe } from '@angular/common';
+import { PercentPipe } from '@angular/common';
 
 import { CycleData } from '../../models/expense.model';
+import { MoneyPipe } from '../../pipes/money.pipe';
 
 interface ComparisonRow {
   month: string;
@@ -14,7 +15,7 @@ interface ComparisonRow {
 @Component({
   selector: 'app-monthly-comparison',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CurrencyPipe, PercentPipe],
+  imports: [MoneyPipe, PercentPipe],
   template: `
     <section class="comparison-section">
       <h2 class="section-title">
@@ -37,17 +38,17 @@ interface ComparisonRow {
               <tr>
                 <td class="month-cell">{{ row.month }}</td>
                 <td class="amount-cell income">
-                  {{ row.income | currency: 'INR' : 'symbol-narrow' : '1.0-0' }}
+                  {{ row.income | money }}
                 </td>
                 <td class="amount-cell expense">
-                  {{ row.expense | currency: 'INR' : 'symbol-narrow' : '1.0-0' }}
+                  {{ row.expense | money }}
                 </td>
                 <td
                   class="amount-cell"
                   [class.positive]="row.savings >= 0"
                   [class.negative]="row.savings < 0"
                 >
-                  {{ row.savings | currency: 'INR' : 'symbol-narrow' : '1.0-0' }}
+                  {{ row.savings | money }}
                 </td>
                 <td
                   class="rate-cell"
@@ -64,17 +65,17 @@ interface ComparisonRow {
               <tr>
                 <td class="month-cell"><strong>Total</strong></td>
                 <td class="amount-cell income">
-                  {{ totalIncome() | currency: 'INR' : 'symbol-narrow' : '1.0-0' }}
+                  {{ totalIncome() | money }}
                 </td>
                 <td class="amount-cell expense">
-                  {{ totalExpense() | currency: 'INR' : 'symbol-narrow' : '1.0-0' }}
+                  {{ totalExpense() | money }}
                 </td>
                 <td
                   class="amount-cell"
                   [class.positive]="totalSavings() >= 0"
                   [class.negative]="totalSavings() < 0"
                 >
-                  {{ totalSavings() | currency: 'INR' : 'symbol-narrow' : '1.0-0' }}
+                  {{ totalSavings() | money }}
                 </td>
                 <td
                   class="rate-cell"

@@ -1,12 +1,13 @@
 import { Component, ChangeDetectionStrategy, input, computed } from '@angular/core';
-import { CurrencyPipe, PercentPipe } from '@angular/common';
+import { PercentPipe } from '@angular/common';
 
 import { CycleData } from '../../models/expense.model';
+import { MoneyPipe } from '../../pipes/money.pipe';
 
 @Component({
   selector: 'app-budget-gauge',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CurrencyPipe, PercentPipe],
+  imports: [MoneyPipe, PercentPipe],
   template: `
     <section class="gauge-section">
       <div class="gauge-card">
@@ -25,10 +26,8 @@ import { CycleData } from '../../models/expense.model';
           ></div>
         </div>
         <div class="gauge-footer">
-          <span>{{
-            cycle().summary.totalExpense | currency: 'INR' : 'symbol-narrow' : '1.0-0'
-          }}</span>
-          <span>{{ totalBudget() | currency: 'INR' : 'symbol-narrow' : '1.0-0' }}</span>
+          <span>{{ cycle().summary.totalExpense | money }}</span>
+          <span>{{ totalBudget() | money }}</span>
         </div>
       </div>
     </section>

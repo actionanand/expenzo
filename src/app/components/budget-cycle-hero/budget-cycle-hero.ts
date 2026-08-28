@@ -1,7 +1,8 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { LucideDynamicIcon } from '@lucide/angular';
 
 import { CycleData } from '../../models/expense.model';
+import { CurrencyPreferencesService } from '../../services/currency-preferences.service';
 import { todayInIndia } from '../../utils/transaction-date';
 
 const DAY_MS = 86_400_000;
@@ -63,6 +64,7 @@ const DAY_MS = 86_400_000;
   styleUrl: './budget-cycle-hero.scss',
 })
 export class BudgetCycleHero {
+  private readonly currency = inject(CurrencyPreferencesService);
   readonly cycle = input.required<CycleData>();
 
   protected readonly cycleStatus = computed<'upcoming' | 'active' | 'complete'>(() => {
@@ -160,11 +162,7 @@ export class BudgetCycleHero {
   );
 
   protected formatCurrency(value: number): string {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      maximumFractionDigits: 0,
-    }).format(value);
+    return this.currency.format(value);
   }
 
   private atStartOfDay(value: Date): Date {

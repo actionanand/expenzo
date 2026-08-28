@@ -1,4 +1,4 @@
-import { CurrencyPipe, DatePipe } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -18,6 +18,7 @@ import { Header } from '../../components/header/header';
 import { PullToRefresh } from '../../components/pull-to-refresh/pull-to-refresh';
 import { TransactionExport } from '../../components/transaction-export/transaction-export';
 import { CycleData, ExpenseResponse, Transaction } from '../../models/expense.model';
+import { MoneyPipe } from '../../pipes/money.pipe';
 import { CacheService } from '../../services/cache.service';
 import { CyclePreferenceService } from '../../services/cycle-preference.service';
 import { ExpenseService } from '../../services/expense.service';
@@ -37,10 +38,10 @@ interface TransactionCycleGroup {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     AppSelectPicker,
-    CurrencyPipe,
     DatePipe,
     Header,
     LucideDynamicIcon,
+    MoneyPipe,
     PullToRefresh,
     ReactiveFormsModule,
     TransactionExport,
@@ -80,11 +81,11 @@ interface TransactionCycleGroup {
           </div>
           <div>
             <span>Total spent</span>
-            <strong>{{ filteredTotal() | currency: 'INR' : 'symbol-narrow' : '1.0-0' }}</strong>
+            <strong>{{ filteredTotal() | money }}</strong>
           </div>
           <div>
             <span>Average</span>
-            <strong>{{ filteredAverage() | currency: 'INR' : 'symbol-narrow' : '1.0-0' }}</strong>
+            <strong>{{ filteredAverage() | money }}</strong>
           </div>
         </section>
 
@@ -206,9 +207,7 @@ interface TransactionCycleGroup {
                       }
                     </small>
                   </span>
-                  <strong class="cycle-total">{{
-                    group.total | currency: 'INR' : 'symbol-narrow' : '1.0-0'
-                  }}</strong>
+                  <strong class="cycle-total">{{ group.total | money }}</strong>
                 </button>
 
                 @if (isExpanded(group.key)) {
@@ -231,7 +230,7 @@ interface TransactionCycleGroup {
                             </span>
                           </div>
                           <strong class="transaction-amount">{{
-                            transaction.price | currency: 'INR' : 'symbol-narrow' : '1.0-0'
+                            transaction.price | money
                           }}</strong>
                         </div>
                       }

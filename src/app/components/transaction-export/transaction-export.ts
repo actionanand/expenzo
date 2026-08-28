@@ -4,6 +4,7 @@ import { LucideDynamicIcon } from '@lucide/angular';
 import { AppSelectOption, AppSelectPicker } from '../app-select-picker/app-select-picker';
 import { CycleData, Transaction } from '../../models/expense.model';
 import { FileExportService } from '../../services/file-export.service';
+import { CurrencyPreferencesService } from '../../services/currency-preferences.service';
 import { formatIndiaDate, todayInIndia, transactionTimestamp } from '../../utils/transaction-date';
 
 type ExportScope = 'current' | 'range' | 'all';
@@ -115,6 +116,7 @@ interface ExportCategory {
 })
 export class TransactionExport {
   private readonly fileExport = inject(FileExportService);
+  private readonly currency = inject(CurrencyPreferencesService);
 
   readonly cycles = input.required<readonly CycleData[]>();
   readonly category = input('all');
@@ -282,11 +284,7 @@ export class TransactionExport {
   }
 
   protected formatCurrency(value: number): string {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      maximumFractionDigits: 0,
-    }).format(value);
+    return this.currency.format(value);
   }
 
   private runExport(operation: () => Promise<string>): void {
@@ -470,7 +468,7 @@ export class TransactionExport {
   }
 
   private formatPdfCurrency(value: number): string {
-    return `INR ${Math.round(value).toLocaleString('en-IN')}`;
+    return this.currency.formatForDocument(value);
   }
 
   private csvCell(value: string): string {

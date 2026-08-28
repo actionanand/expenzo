@@ -1,7 +1,7 @@
 import { Component, ChangeDetectionStrategy, input, computed } from '@angular/core';
-import { CurrencyPipe } from '@angular/common';
 
 import { CycleData } from '../../models/expense.model';
+import { MoneyPipe } from '../../pipes/money.pipe';
 
 interface OverallStat {
   label: string;
@@ -12,7 +12,7 @@ interface OverallStat {
 @Component({
   selector: 'app-overview-stats',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CurrencyPipe],
+  imports: [MoneyPipe],
   template: `
     <section class="overview-section">
       <h2 class="section-title">Overall Statistics</h2>
@@ -20,9 +20,7 @@ interface OverallStat {
         @for (stat of stats(); track stat.label) {
           <div class="stat-card" [class]="stat.type">
             <span class="stat-label">{{ stat.label }}</span>
-            <span class="stat-value">{{
-              stat.value | currency: 'INR' : 'symbol-narrow' : '1.0-0'
-            }}</span>
+            <span class="stat-value">{{ stat.value | money }}</span>
           </div>
         }
       </div>
@@ -33,9 +31,7 @@ interface OverallStat {
             <div class="top-cat-item">
               <span class="top-rank">{{ i + 1 }}</span>
               <span class="top-name">{{ cat.category }}</span>
-              <span class="top-amount">{{
-                cat.total | currency: 'INR' : 'symbol-narrow' : '1.0-0'
-              }}</span>
+              <span class="top-amount">{{ cat.total | money }}</span>
             </div>
           }
         </div>
