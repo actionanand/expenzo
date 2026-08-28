@@ -11,7 +11,9 @@ permissions:
 # ── Android SDK version targets — edit here when Google requires a new target ──
 env:
   MIN_SDK_VERSION: 24 # Android 7.0 (Nougat) — update when Google mandates a newer minimum (currently 24 for Play Store)
-  TARGET_SDK_VERSION: 35 # Android 15 (UpsideDownCake) — update when Google mandates a newer target
+  COMPILE_SDK_VERSION: 36 # Android 16
+  TARGET_SDK_VERSION: 36 # Android 16
+  RELEASE_BASENAME: expenzo-release
   # FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true # Opt into Node.js 24 for all actions (required from June 2026)
 
 jobs:
@@ -35,6 +37,37 @@ jobs:
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
+
+      - name: Install Android 16 SDK and matching Build Tools
+        shell: bash
+        run: |
+          set -o pipefail
+          if (( COMPILE_SDK_VERSION < TARGET_SDK_VERSION )); then
+            echo "❌ compileSdkVersion $COMPILE_SDK_VERSION cannot be lower than targetSdkVersion $TARGET_SDK_VERSION."
+            exit 1
+          fi
+
+          BUILD_TOOLS_VERSION=$(
+            sdkmanager --list |
+              awk -v api="$COMPILE_SDK_VERSION" '
+                $1 ~ /^build-tools;/ {
+                  version = $1
+                  sub(/^build-tools;/, "", version)
+                  pattern = "^" api "\\.[0-9]+\\.[0-9]+$"
+                  if (version ~ pattern) print version
+                }
+              ' |
+              sort -Vu |
+              tail -1
+          )
+          if [[ -z "$BUILD_TOOLS_VERSION" ]]; then
+            echo "❌ No stable Build Tools release matches compile SDK $COMPILE_SDK_VERSION."
+            exit 1
+          fi
+
+          sdkmanager "platforms;android-$COMPILE_SDK_VERSION" "build-tools;$BUILD_TOOLS_VERSION"
+          echo "BUILD_TOOLS_VERSION=$BUILD_TOOLS_VERSION" >> "$GITHUB_ENV"
+          echo "✅ Installed Android API $COMPILE_SDK_VERSION with Build Tools $BUILD_TOOLS_VERSION"
 
       - name: Install project dependencies
         run: npm install
@@ -73,10 +106,20 @@ jobs:
             's/versionName "[^"]*"/versionName project.hasProperty("versionName") ? project.versionName : "1.0.0"/' \
             build.gradle
           echo "✅ build.gradle patched for dynamic versioning"
-          # Patch minSdkVersion and targetSdkVersion in variables.gradle
+          # Patch Android 16 SDK levels in variables.gradle
           sed -i "s/minSdkVersion = .*/minSdkVersion = $MIN_SDK_VERSION/" ../variables.gradle
+          sed -i "s/compileSdkVersion = .*/compileSdkVersion = $COMPILE_SDK_VERSION/" ../variables.gradle
           sed -i "s/targetSdkVersion = .*/targetSdkVersion = $TARGET_SDK_VERSION/" ../variables.gradle
-          echo "✅ variables.gradle patched: minSdk=$MIN_SDK_VERSION targetSdk=$TARGET_SDK_VERSION"
+          if grep -Eq '^[[:space:]]*buildToolsVersion[[:space:]]' build.gradle; then
+            sed -i "s/^[[:space:]]*buildToolsVersion[[:space:]].*/    buildToolsVersion \"$BUILD_TOOLS_VERSION\"/" build.gradle
+          else
+            sed -i "/^[[:space:]]*android[[:space:]]*{/a\\    buildToolsVersion \"$BUILD_TOOLS_VERSION\"" build.gradle
+          fi
+          grep -Fq "minSdkVersion = $MIN_SDK_VERSION" ../variables.gradle
+          grep -Fq "compileSdkVersion = $COMPILE_SDK_VERSION" ../variables.gradle
+          grep -Fq "targetSdkVersion = $TARGET_SDK_VERSION" ../variables.gradle
+          grep -Fq "buildToolsVersion \"$BUILD_TOOLS_VERSION\"" build.gradle
+          echo "✅ Android SDK levels applied: min=$MIN_SDK_VERSION compile=$COMPILE_SDK_VERSION target=$TARGET_SDK_VERSION"
 
       - name: Sync web assets to Android
         run: npx cap sync android
@@ -117,11 +160,20 @@ jobs:
           git commit -m "chore: auto-bump android versionCode [skip ci]"
           git push
 
+      - name: Prepare versioned artifact names
+        shell: bash
+        run: |
+          VERSION_CODE=$(node -p "require('./android-version.json').versionCode")
+          VERSION_NAME=$(node -p "require('./android-version.json').versionName")
+          VERSION_SUFFIX=${VERSION_NAME//./-}
+          echo "VERSION_CODE=$VERSION_CODE" >> "$GITHUB_ENV"
+          echo "VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
+          echo "RELEASE_FILE_BASENAME=${RELEASE_BASENAME}-${VERSION_SUFFIX}" >> "$GITHUB_ENV"
+          echo "✅ Artifact basename: ${RELEASE_BASENAME}-${VERSION_SUFFIX}"
+
       - name: Build APK & AAB with Gradle
         working-directory: android
         run: |
-          VERSION_CODE=$(node -p "require('../android-version.json').versionCode")
-          VERSION_NAME=$(node -p "require('../android-version.json').versionName")
           echo "Building versionCode=$VERSION_CODE versionName=$VERSION_NAME"
           ./gradlew assembleRelease bundleRelease \
             -PversionCode="$VERSION_CODE" \
@@ -150,9 +202,9 @@ jobs:
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
           UNSIGNED_APK=$(find android/app/build -name "*-release-unsigned.apk" | head -1)
-          ALIGNED_APK="android/app/build/outputs/apk/release/expenzo-release.apk"
+          ALIGNED_APK="android/app/build/outputs/apk/release/${RELEASE_FILE_BASENAME}.apk"
 
-          BUILD_TOOLS_DIR="${ANDROID_HOME}/build-tools/$(ls "${ANDROID_HOME}/build-tools/" | sort -V | tail -1)"
+          BUILD_TOOLS_DIR="${ANDROID_HOME}/build-tools/${BUILD_TOOLS_VERSION}"
 
           "$BUILD_TOOLS_DIR/zipalign" -v 4 "$UNSIGNED_APK" "$ALIGNED_APK"
 
@@ -170,7 +222,7 @@ jobs:
         if: steps.keystore.outputs.available != 'true' || steps.sign_apk.outcome == 'failure'
         run: |
           UNSIGNED_APK=$(find android/app/build -name "*-release-unsigned.apk" | head -1)
-          cp "$UNSIGNED_APK" android/app/build/outputs/apk/release/expenzo-release.apk
+          cp "$UNSIGNED_APK" "android/app/build/outputs/apk/release/${RELEASE_FILE_BASENAME}.apk"
           if [[ "${{ steps.sign_apk.outcome }}" == "failure" ]]; then
             echo "::warning title=Unsigned APK::Signing failed — keystore password mismatch or corrupt keystore. See ANDROID.md to regenerate the keystore. APK is unsigned."
           else
@@ -188,7 +240,7 @@ jobs:
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
           UNSIGNED_AAB=$(find android/app/build -name "*-release.aab" | head -1)
-          SIGNED_AAB="android/app/build/outputs/bundle/release/expenzo-release.aab"
+          SIGNED_AAB="android/app/build/outputs/bundle/release/${RELEASE_FILE_BASENAME}.aab"
 
           jarsigner -verbose \
             -keystore android/app/release-keystore.jks \
@@ -205,7 +257,7 @@ jobs:
         if: steps.keystore.outputs.available != 'true' || steps.sign_aab.outcome == 'failure'
         run: |
           UNSIGNED_AAB=$(find android/app/build -name "*-release.aab" | head -1)
-          cp "$UNSIGNED_AAB" android/app/build/outputs/bundle/release/expenzo-release.aab
+          cp "$UNSIGNED_AAB" "android/app/build/outputs/bundle/release/${RELEASE_FILE_BASENAME}.aab"
           if [[ "${{ steps.sign_aab.outcome }}" == "failure" ]]; then
             echo "::warning title=Unsigned AAB::Signing failed — keystore password mismatch or corrupt keystore. See ANDROID.md to regenerate the keystore. AAB is unsigned."
           else
@@ -216,10 +268,10 @@ jobs:
       - name: Commit APK & AAB to branch
         run: |
           mkdir -p releases
-          # Remove old builds before copying new ones
-          rm -f releases/expenzo-release.apk releases/expenzo-release.aab
-          cp android/app/build/outputs/apk/release/expenzo-release.apk releases/expenzo-release.apk
-          cp android/app/build/outputs/bundle/release/expenzo-release.aab releases/expenzo-release.aab
+          # Keep only the newest generated Android artifacts. Preserve playstore-icon.png.
+          rm -f releases/*.apk releases/*.aab releases/*.apk.idsig releases/*-mapping.txt
+          cp "android/app/build/outputs/apk/release/${RELEASE_FILE_BASENAME}.apk" "releases/${RELEASE_FILE_BASENAME}.apk"
+          cp "android/app/build/outputs/bundle/release/${RELEASE_FILE_BASENAME}.aab" "releases/${RELEASE_FILE_BASENAME}.aab"
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -232,15 +284,17 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: expenzo-release-apk
-          path: android/app/build/outputs/apk/release/expenzo-release.apk
+          name: ${{ env.RELEASE_FILE_BASENAME }}-apk
+          path: releases/${{ env.RELEASE_FILE_BASENAME }}.apk
+          if-no-files-found: error
           retention-days: 30
 
       - name: Upload AAB
         uses: actions/upload-artifact@v4
         with:
-          name: expenzo-release-aab
-          path: android/app/build/outputs/bundle/release/expenzo-release.aab
+          name: ${{ env.RELEASE_FILE_BASENAME }}-aab
+          path: releases/${{ env.RELEASE_FILE_BASENAME }}.aab
+          if-no-files-found: error
           retention-days: 30
 
       # ── GitHub Release (on tag push) ──
@@ -249,5 +303,5 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            android/app/build/outputs/apk/release/expenzo-release.apk
-            android/app/build/outputs/bundle/release/expenzo-release.aab
+            releases/${{ env.RELEASE_FILE_BASENAME }}.apk
+            releases/${{ env.RELEASE_FILE_BASENAME }}.aab

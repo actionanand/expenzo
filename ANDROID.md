@@ -122,7 +122,7 @@ const config: CapacitorConfig = {
 
 ## When a New Android Version Is Released
 
-When Google releases a new Android version (e.g. Android 16), you need to update `targetSdkVersion` to maintain Play Store compliance. Google typically requires apps to target the latest SDK within 12 months of release.
+When Google releases a new Android version, update both `compileSdkVersion` and `targetSdkVersion` to maintain Play Store compliance. Google typically requires apps to target the latest SDK within 12 months of release.
 
 ### Steps
 
@@ -132,11 +132,12 @@ When Google releases a new Android version (e.g. Android 16), you need to update
 
    ```yaml
    env:
-     MIN_SDK_VERSION: 22 # Android 5.1 Lollipop (~99% devices)
-     TARGET_SDK_VERSION: 35 # Android 15 — update this value
+     MIN_SDK_VERSION: 24 # Android 7.0 Nougat
+     COMPILE_SDK_VERSION: 36 # Android 16
+     TARGET_SDK_VERSION: 36 # Android 16
    ```
 
-   Change `TARGET_SDK_VERSION` to the new API level, e.g. `36` for Android 16.
+   Keep `COMPILE_SDK_VERSION` at or above `TARGET_SDK_VERSION`. CI installs the selected platform and matching stable Build Tools before generating the release.
 
 3. Also update the Capacitor Android dependency in the workflow to ensure it supports the new SDK:
 
@@ -164,11 +165,12 @@ The current targets are configured as workflow-level environment variables in `.
 
 ```yaml
 env:
-  MIN_SDK_VERSION: 22 # Android 5.1 Lollipop (~99% devices)
-  TARGET_SDK_VERSION: 35 # Android 15
+  MIN_SDK_VERSION: 24 # Android 7.0 Nougat
+  COMPILE_SDK_VERSION: 36 # Android 16
+  TARGET_SDK_VERSION: 36 # Android 16
 ```
 
-Edit these two values and push — CI applies them automatically via `sed` to `variables.gradle` during the build.
+Edit these values and push — CI installs the configured SDK and applies them automatically to the generated Gradle project.
 
 Common `minSdkVersion` values:
 
@@ -255,7 +257,7 @@ git push origin main-android
 
 After the workflow finishes, the files are available in **two places**:
 
-- `releases/expenzo-release.apk` and `releases/expenzo-release.aab` — committed directly to the `main-android` branch (browse in GitHub → download)
+- Versioned files such as `releases/expenzo-release-1-0-2.apk` and `releases/expenzo-release-1-0-2.aab` — committed directly to the `main-android` branch. Older APK/AAB files are removed whenever a new build is published.
 - **Actions → Android APK & AAB Build → Artifacts** — downloadable for 30 days
 
 ### Tagged release (creates GitHub Release)
@@ -281,7 +283,7 @@ git push origin v1.0.0
 ### Upload the AAB (Play Store)
 
 1. Go to **Production → Create new release** (or use Internal/Closed testing first).
-2. Upload the signed `expenzo-release.aab` (download from `releases/` folder in `main-android`).
+2. Upload the signed versioned AAB, such as `expenzo-release-1-0-2.aab` (download from the `releases/` folder in `main-android`).
 3. Use `releases/playstore-icon.png` as the store listing icon.
 4. Add release notes and submit for review.
 
