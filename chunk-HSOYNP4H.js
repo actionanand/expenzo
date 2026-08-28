@@ -1,0 +1,1 @@
+import{c as m}from"./chunk-POXNHNXN.js";import{Q as i,ta as t}from"./chunk-UEU5EJKW.js";var o=class r{currency=i(m);transform(n,e=0){return this.currency.format(n??0,e)}static \u0275fac=function(e){return new(e||r)};static \u0275pipe=t({name:"money",type:r,pure:!1})};export{o as a};

@@ -10,18 +10,38 @@
     <script>
       (function () {
         var t = localStorage.getItem('expenzo-theme');
+        var c = localStorage.getItem('expenzo-color-theme');
+        var colors = ['forest', 'rose', 'ocean', 'violet', 'teal', 'amber'];
+        var colorTheme = colors.indexOf(c) >= 0 ? c : 'forest';
         var isDark =
           t === 'dark' ||
           (t !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
         document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+        document.documentElement.setAttribute('data-color-theme', colorTheme);
         document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';
+        var lightBackgrounds = {
+          forest: '#f1f8e9',
+          rose: '#fff7fa',
+          ocean: '#f5f9ff',
+          violet: '#fcf8ff',
+          teal: '#f4fbfa',
+          amber: '#fffbf2',
+        };
+        var darkBackgrounds = {
+          forest: '#0d1b0d',
+          rose: '#170d11',
+          ocean: '#0b151f',
+          violet: '#150f18',
+          teal: '#0a1715',
+          amber: '#17130c',
+        };
         document
           .querySelector('meta[name="theme-color"]')
-          .setAttribute('content', isDark ? '#0d1b0d' : '#f1f8e9');
+          .setAttribute('content', (isDark ? darkBackgrounds : lightBackgrounds)[colorTheme]);
       })();
     </script>
-  <style>*,*:before,*:after{margin:0;padding:0;box-sizing:border-box}:root{--color-primary:#2e7d32;--color-on-primary:#fff;--color-primary-light:#4caf50;--color-primary-dark:#1b5e20;--color-primary-surface:#e8f5e9;--color-bg:#f1f8e9;--color-surface:#fff;--color-surface-variant:#f5f9f5;--color-text:#1b2e1b;--color-text-secondary:#546e54;--color-border:#c8e6c9;--color-danger:#c62828;--color-danger-bg:#ffebee;--color-warning:#ef6c00;--color-warning-bg:#fff3e0;--color-success:#2e7d32;--color-success-bg:#e8f5e9;--color-income:#1565c0;--color-income-bg:#e3f2fd;--shadow-sm:0 1px 3px rgb(0 0 0 / .06);--shadow-md:0 4px 12px rgb(0 0 0 / .08);--radius:14px;--radius-sm:10px;--radius-xs:6px}html,body{min-height:100%;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica Neue,Arial,sans-serif;background-color:var(--color-bg);color:var(--color-text);line-height:1.5;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;transition:background-color .3s ease,color .3s ease}body{min-height:100dvh;overscroll-behavior-y:none;-webkit-tap-highlight-color:transparent}</style><link rel="stylesheet" href="styles-LJHWDOQN.css" media="print" onload="this.media='all'"><noscript><link rel="stylesheet" href="styles-LJHWDOQN.css"></noscript></head>
+  <style>*,*:before,*:after{margin:0;padding:0;box-sizing:border-box}:root{--color-primary:#2e7d32;--color-on-primary:#fff;--color-primary-light:#4caf50;--color-primary-dark:#1b5e20;--color-primary-surface:#e8f5e9;--color-bg:#f1f8e9;--color-surface:#fff;--color-surface-variant:#f5f9f5;--color-text:#1b2e1b;--color-text-secondary:#546e54;--color-border:#c8e6c9;--color-danger:#c62828;--color-danger-bg:#ffebee;--color-warning:#ef6c00;--color-warning-bg:#fff3e0;--color-success:#2e7d32;--color-success-bg:#e8f5e9;--color-income:#1565c0;--color-income-bg:#e3f2fd;--color-budget-hero:#075b43;--color-budget-hero-inner:#064b38;--color-budget-hero-muted:#b9e8d7;--color-budget-hero-progress:#60ddb1;--color-on-budget-hero:#fff;--shadow-budget-hero:0 14px 32px rgb(3 54 38 / 22%);--shadow-sm:0 1px 3px rgb(0 0 0 / .06);--shadow-md:0 4px 12px rgb(0 0 0 / .08);--radius:14px;--radius-sm:10px;--radius-xs:6px}html,body{min-height:100%;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica Neue,Arial,sans-serif;background-color:var(--color-bg);color:var(--color-text);line-height:1.5;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;transition:background-color .3s ease,color .3s ease}body{min-height:100dvh;overscroll-behavior-y:none;-webkit-tap-highlight-color:transparent}</style><link rel="stylesheet" href="styles-KXFEO5FY.css" media="print" onload="this.media='all'"><noscript><link rel="stylesheet" href="styles-KXFEO5FY.css"></noscript></head>
   <body>
     <app-root></app-root>
-  <link rel="modulepreload" href="chunk-QTIH3GHL.js"><link rel="modulepreload" href="chunk-FIVM7UZ6.js"><link rel="modulepreload" href="chunk-NOCBF7LH.js"><link rel="modulepreload" href="chunk-SKZVOWQH.js"><link rel="modulepreload" href="chunk-7PN7NZSA.js"><link rel="modulepreload" href="chunk-TOU4I6PA.js"><link rel="modulepreload" href="chunk-UV7JNUKX.js"><link rel="modulepreload" href="chunk-RTWSDZQY.js"><script src="main-MH54EHMM.js" type="module"></script></body>
+  <link rel="modulepreload" href="chunk-N5BMRVCO.js"><link rel="modulepreload" href="chunk-NA3TA2E4.js"><link rel="modulepreload" href="chunk-PDZX7JQB.js"><link rel="modulepreload" href="chunk-ZY33WUDS.js"><link rel="modulepreload" href="chunk-YRK6CMV6.js"><link rel="modulepreload" href="chunk-UIHI4KQT.js"><link rel="modulepreload" href="chunk-JZRAGSEZ.js"><link rel="modulepreload" href="chunk-UEU5EJKW.js"><script src="main-HYA5S6PN.js" type="module"></script></body>
 </html>

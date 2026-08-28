@@ -1,1 +1,0 @@
-import{M as c}from"./chunk-RTWSDZQY.js";var o=class e{trigger(t){try{window.ExpenzoNative?.hapticFeedback(t)}catch{}}static \u0275fac=function(r){return new(r||e)};static \u0275prov=c({token:e,factory:e.\u0275fac,providedIn:"root"})};export{o as a};
