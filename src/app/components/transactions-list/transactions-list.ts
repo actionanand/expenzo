@@ -1,13 +1,13 @@
 import { Component, ChangeDetectionStrategy, input, computed, signal } from '@angular/core';
-import { CurrencyPipe } from '@angular/common';
 
 import { Transaction } from '../../models/expense.model';
+import { MoneyPipe } from '../../pipes/money.pipe';
 import { formatIndiaDate, transactionTimestamp } from '../../utils/transaction-date';
 
 @Component({
   selector: 'app-transactions-list',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CurrencyPipe],
+  imports: [MoneyPipe],
   template: `
     <section class="transactions-section">
       <h2 class="section-title">Recent Transactions</h2>
@@ -21,9 +21,7 @@ import { formatIndiaDate, transactionTimestamp } from '../../utils/transaction-d
                 <span class="tx-date">{{ formatDate(tx.date) }}</span>
               </span>
             </div>
-            <span class="tx-amount">{{
-              tx.price | currency: 'INR' : 'symbol-narrow' : '1.0-0'
-            }}</span>
+            <span class="tx-amount">{{ tx.price | money }}</span>
           </div>
         }
       </div>

@@ -1,13 +1,13 @@
 import { Component, ChangeDetectionStrategy, input, signal } from '@angular/core';
-import { CurrencyPipe } from '@angular/common';
 
 import { CategorySummary, Transaction } from '../../models/expense.model';
+import { MoneyPipe } from '../../pipes/money.pipe';
 import { formatIndiaDate } from '../../utils/transaction-date';
 
 @Component({
   selector: 'app-category-breakdown',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CurrencyPipe],
+  imports: [MoneyPipe],
   template: `
     <section class="category-section">
       <h2 class="section-title">Category Breakdown</h2>
@@ -22,11 +22,9 @@ import { formatIndiaDate } from '../../utils/transaction-date';
             >
               <span class="category-name">{{ cat.category }}</span>
               <span class="category-amount">
-                {{ cat.spent | currency: 'INR' : 'symbol-narrow' : '1.0-0' }}
+                {{ cat.spent | money }}
                 @if (cat.limit > 0) {
-                  <span class="category-limit">
-                    / {{ cat.limit | currency: 'INR' : 'symbol-narrow' : '1.0-0' }}
-                  </span>
+                  <span class="category-limit"> / {{ cat.limit | money }} </span>
                 }
               </span>
             </button>
@@ -43,10 +41,7 @@ import { formatIndiaDate } from '../../utils/transaction-date';
               </div>
               <span class="category-remaining" [class.negative]="cat.remaining < 0">
                 {{ cat.remaining < 0 ? 'Over by' : 'Left' }}:
-                {{
-                  (cat.remaining < 0 ? -cat.remaining : cat.remaining)
-                    | currency: 'INR' : 'symbol-narrow' : '1.0-0'
-                }}
+                {{ (cat.remaining < 0 ? -cat.remaining : cat.remaining) | money }}
               </span>
             }
             @if (expandedCategory() === cat.category) {
@@ -57,9 +52,7 @@ import { formatIndiaDate } from '../../utils/transaction-date';
                       <span class="cat-tx-name">{{ tx.name }}</span>
                       <span class="cat-tx-date">{{ formatDate(tx.date) }}</span>
                     </div>
-                    <span class="cat-tx-price">{{
-                      tx.price | currency: 'INR' : 'symbol-narrow' : '1.0-0'
-                    }}</span>
+                    <span class="cat-tx-price">{{ tx.price | money }}</span>
                   </div>
                 } @empty {
                   <p class="cat-tx-empty">No transactions</p>

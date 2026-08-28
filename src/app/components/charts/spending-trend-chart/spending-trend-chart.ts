@@ -6,6 +6,7 @@ import { ChartConfiguration, TooltipItem } from 'chart.js';
 import { BaseChartDirective } from 'ng2-charts';
 
 import { CycleData } from '../../../models/expense.model';
+import { CurrencyPreferencesService } from '../../../services/currency-preferences.service';
 import { selectIsDark } from '../../../store/theme/theme.selectors';
 import {
   formatIndiaDate,
@@ -76,6 +77,7 @@ interface SpendingPoint {
 export class SpendingTrendChart {
   readonly cycles = input.required<readonly CycleData[]>();
   private readonly store = inject(Store);
+  private readonly currency = inject(CurrencyPreferencesService);
   private readonly isDark = toSignal(this.store.select(selectIsDark), { initialValue: false });
 
   protected readonly points = computed<SpendingPoint[]>(() => {
@@ -225,20 +227,11 @@ export class SpendingTrendChart {
   });
 
   protected formatCurrency(value: number): string {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      maximumFractionDigits: 0,
-    }).format(value);
+    return this.currency.format(value);
   }
 
   private compactCurrency(value: number): string {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      notation: 'compact',
-      maximumFractionDigits: 1,
-    }).format(value);
+    return this.currency.formatCompact(value);
   }
 
   private dateKey(date: Date): string {

@@ -20,6 +20,7 @@ export interface AppSelectOption {
   readonly detail?: string;
   readonly disabled?: boolean;
   readonly icon?: string;
+  readonly swatch?: string;
 }
 
 @Component({
@@ -47,6 +48,9 @@ export interface AppSelectOption {
       @if (selectedOption()?.icon; as icon) {
         <svg class="leading-icon" [lucideIcon]="icon" aria-hidden="true"></svg>
       }
+      @if (selectedOption()?.swatch; as swatch) {
+        <span class="option-swatch compact-swatch" [style.background-color]="swatch"></span>
+      }
       <span class="selected-label">{{ selectedLabel() }}</span>
       <svg class="chevron" lucideIcon="chevron-down" aria-hidden="true"></svg>
     </button>
@@ -69,14 +73,30 @@ export interface AppSelectOption {
           [attr.aria-label]="sheetTitle() || label() || 'Choose an option'"
           tabindex="-1"
         >
-          <header>
-            <strong>{{ sheetTitle() || label() || 'Choose an option' }}</strong>
-            <button type="button" aria-label="Close options" (click)="close()">
-              <svg lucideIcon="x" aria-hidden="true"></svg>
-            </button>
-          </header>
+          <div class="picker-top">
+            <header>
+              <strong>{{ sheetTitle() || label() || 'Choose an option' }}</strong>
+              <button type="button" aria-label="Close options" (click)="close()">
+                <svg lucideIcon="x" aria-hidden="true"></svg>
+              </button>
+            </header>
+            @if (searchable()) {
+              <label class="picker-search">
+                <span class="visually-hidden">Search options</span>
+                <svg lucideIcon="search" aria-hidden="true"></svg>
+                <input
+                  #searchInput
+                  type="search"
+                  autocomplete="off"
+                  [placeholder]="searchPlaceholder()"
+                  [value]="searchQuery()"
+                  (input)="updateSearch($event)"
+                />
+              </label>
+            }
+          </div>
           <div class="picker-options" role="listbox" [attr.aria-label]="sheetTitle() || label()">
-            @for (option of options(); track option.value) {
+            @for (option of filteredOptions(); track option.value) {
               <button
                 type="button"
                 class="picker-option"
@@ -89,6 +109,9 @@ export interface AppSelectOption {
                 @if (option.icon) {
                   <svg class="option-icon" [lucideIcon]="option.icon" aria-hidden="true"></svg>
                 }
+                @if (option.swatch) {
+                  <span class="option-swatch" [style.background-color]="option.swatch"></span>
+                }
                 <span class="option-copy">
                   <strong>{{ option.label }}</strong>
                   @if (option.detail) {
@@ -99,6 +122,8 @@ export interface AppSelectOption {
                   <svg class="option-check" lucideIcon="circle-check" aria-hidden="true"></svg>
                 }
               </button>
+            } @empty {
+              <p class="picker-empty" role="status">No matching options</p>
             }
           </div>
         </section>
@@ -116,19 +141,32 @@ export class AppSelectPicker {
   readonly hint = input('');
   readonly disabled = input(false);
   readonly compact = input(false);
+  readonly searchable = input(false);
+  readonly searchPlaceholder = input('Search options');
   readonly options = input.required<readonly AppSelectOption[]>();
   readonly valueChange = output<string>();
 
   protected readonly open = signal(false);
+  protected readonly searchQuery = signal('');
   protected readonly selectedOption = computed(() =>
     this.options().find((option) => option.value === this.value()),
   );
   protected readonly selectedLabel = computed(
     () => this.selectedOption()?.label ?? this.placeholder(),
   );
+  protected readonly filteredOptions = computed(() => {
+    const query = this.normalizeSearch(this.searchQuery());
+    if (!query) return this.options();
+    return this.options().filter((option) =>
+      this.normalizeSearch(`${option.label} ${option.detail ?? ''} ${option.value}`).includes(
+        query,
+      ),
+    );
+  });
 
   private readonly trigger = viewChild.required<ElementRef<HTMLButtonElement>>('trigger');
   private readonly sheet = viewChild<ElementRef<HTMLElement>>('sheet');
+  private readonly searchInput = viewChild<ElementRef<HTMLInputElement>>('searchInput');
 
   constructor() {
     effect((onCleanup) => {
@@ -140,6 +178,10 @@ export class AppSelectPicker {
       document.body.style.overflow = 'hidden';
       window.setTimeout(() => {
         const sheet = this.sheet()?.nativeElement;
+        if (this.searchable()) {
+          this.searchInput()?.nativeElement.focus();
+          return;
+        }
         const selected = sheet?.querySelector<HTMLElement>(
           '.picker-option.selected:not(:disabled)',
         );
@@ -155,8 +197,13 @@ export class AppSelectPicker {
 
   protected show(): void {
     if (!this.disabled()) {
+      this.searchQuery.set('');
       this.open.set(true);
     }
+  }
+
+  protected updateSearch(event: Event): void {
+    this.searchQuery.set((event.target as HTMLInputElement).value);
   }
 
   protected close(): void {
@@ -199,7 +246,7 @@ export class AppSelectPicker {
 
     const sheet = this.sheet()?.nativeElement;
     const focusable = Array.from(
-      sheet?.querySelectorAll<HTMLElement>('button:not(:disabled)') ?? [],
+      sheet?.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled)') ?? [],
     );
     if (focusable.length === 0) {
       event.preventDefault();
@@ -216,5 +263,13 @@ export class AppSelectPicker {
       event.preventDefault();
       first.focus();
     }
+  }
+
+  private normalizeSearch(value: string): string {
+    return value
+      .trim()
+      .toLocaleLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
   }
 }

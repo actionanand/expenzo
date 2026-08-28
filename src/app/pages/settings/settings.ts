@@ -8,6 +8,14 @@ import {
   AppSelectPicker,
 } from '../../components/app-select-picker/app-select-picker';
 import { AppLockService } from '../../services/app-lock.service';
+import { COLOR_THEME_OPTIONS, ColorThemeService } from '../../services/color-theme.service';
+import {
+  COUNTRY_CURRENCY_OPTIONS,
+  CurrencyPreferencesService,
+  DISPLAY_CURRENCY_CODES,
+  currencyLabel,
+  currencySymbol,
+} from '../../services/currency-preferences.service';
 import { SecuritySettingsService } from '../../services/security-settings.service';
 import { SecurityService } from '../../services/security.service';
 
@@ -32,7 +40,7 @@ import { SecurityService } from '../../services/security.service';
           <div>
             <p>Preferences</p>
             <h1 id="settings-title">Settings</h1>
-            <span>Manage local security and device behavior.</span>
+            <span>Manage appearance, currency, and local security.</span>
           </div>
           <a routerLink="/" class="close-button" aria-label="Close settings">
             <svg lucideIcon="x" aria-hidden="true"></svg>
@@ -40,6 +48,80 @@ import { SecurityService } from '../../services/security.service';
         </header>
 
         <div class="settings-body">
+          <section class="settings-section" aria-labelledby="appearance-title">
+            <header>
+              <span class="section-icon" aria-hidden="true">
+                <svg lucideIcon="palette"></svg>
+              </span>
+              <div>
+                <h2 id="appearance-title">Appearance</h2>
+                <p>Choose an accent palette for both light and dark mode.</p>
+              </div>
+            </header>
+
+            <div class="setting-rows">
+              <div class="setting-row picker-row">
+                <span>
+                  <strong>Color theme</strong>
+                  <small>Light, dark, and automatic mode remain available in the top bar</small>
+                </span>
+                <app-select-picker
+                  label="Color theme"
+                  sheetTitle="Choose color theme"
+                  [options]="colorThemeOptions"
+                  [value]="colorTheme.theme()"
+                  (valueChange)="changeColorTheme($event)"
+                />
+              </div>
+            </div>
+          </section>
+
+          <section class="settings-section" aria-labelledby="currency-title">
+            <header>
+              <span class="section-icon" aria-hidden="true">
+                <svg lucideIcon="coins"></svg>
+              </span>
+              <div>
+                <h2 id="currency-title">Country & currency</h2>
+                <p>Choose how amounts appear. Values are not converted.</p>
+              </div>
+            </header>
+
+            <div class="setting-rows currency-rows">
+              <div class="setting-row picker-row">
+                <span>
+                  <strong>Country or region</strong>
+                  <small>Sets the usual currency and number format</small>
+                </span>
+                <app-select-picker
+                  label="Country or region"
+                  sheetTitle="Choose country or region"
+                  searchPlaceholder="Search country or currency"
+                  [searchable]="true"
+                  [options]="countryOptions"
+                  [value]="currency.countryCode()"
+                  (valueChange)="changeCountry($event)"
+                />
+              </div>
+
+              <div class="setting-row picker-row">
+                <span>
+                  <strong>Display currency</strong>
+                  <small>Changes symbols only, without exchange-rate conversion</small>
+                </span>
+                <app-select-picker
+                  label="Display currency"
+                  sheetTitle="Choose display currency"
+                  searchPlaceholder="Search currency name or code"
+                  [searchable]="true"
+                  [options]="currencyOptions"
+                  [value]="currency.currencyCode()"
+                  (valueChange)="changeCurrency($event)"
+                />
+              </div>
+            </div>
+          </section>
+
           <section class="settings-section" aria-labelledby="security-title">
             <header>
               <span class="section-icon" aria-hidden="true">
@@ -230,6 +312,8 @@ export class Settings {
   protected readonly settings = inject(SecuritySettingsService);
   protected readonly security = inject(SecurityService);
   protected readonly lock = inject(AppLockService);
+  protected readonly colorTheme = inject(ColorThemeService);
+  protected readonly currency = inject(CurrencyPreferencesService);
   private readonly formBuilder = inject(FormBuilder);
 
   protected readonly pinDialogOpen = signal(false);
@@ -237,6 +321,28 @@ export class Settings {
   protected readonly formError = signal('');
   protected readonly savingPin = signal(false);
   protected readonly message = signal('');
+  protected readonly colorThemeOptions: readonly AppSelectOption[] = COLOR_THEME_OPTIONS.map(
+    (option) => ({
+      value: option.id,
+      label: option.label,
+      detail: option.description,
+      swatch: option.swatch,
+    }),
+  );
+  protected readonly countryOptions: readonly AppSelectOption[] = COUNTRY_CURRENCY_OPTIONS.map(
+    (option) => ({
+      value: option.countryCode,
+      label: option.countryName,
+      detail: `${option.currencyCode} · ${currencyLabel(option.currencyCode)}`,
+    }),
+  );
+  protected readonly currencyOptions: readonly AppSelectOption[] = DISPLAY_CURRENCY_CODES.map(
+    (currencyCode) => ({
+      value: currencyCode,
+      label: `${currencyLabel(currencyCode)} (${currencyCode})`,
+      detail: currencySymbol(currencyCode, 'US'),
+    }),
+  );
   protected readonly pinForm = this.formBuilder.nonNullable.group({
     pin: ['', [Validators.required, Validators.pattern(/^\d{4,8}$/)]],
     confirmation: ['', [Validators.required, Validators.pattern(/^\d{4,8}$/)]],
@@ -341,6 +447,22 @@ export class Settings {
 
   protected changeAutoLock(value: string): void {
     this.settings.update({ autoLockMinutes: value === 'never' ? null : Number(value) });
+  }
+
+  protected changeCountry(countryCode: string): void {
+    this.currency.setCountry(countryCode);
+    this.showMessage(`Display changed to ${currencyLabel(this.currency.currencyCode())}.`);
+  }
+
+  protected changeColorTheme(theme: string): void {
+    this.colorTheme.set(theme);
+    const selected = COLOR_THEME_OPTIONS.find((option) => option.id === this.colorTheme.theme());
+    this.showMessage(`${selected?.label ?? 'Color theme'} applied.`);
+  }
+
+  protected changeCurrency(currencyCode: string): void {
+    this.currency.setCurrency(currencyCode);
+    this.showMessage(`Display changed to ${currencyLabel(this.currency.currencyCode())}.`);
   }
 
   protected toggleLockInBackground(): void {

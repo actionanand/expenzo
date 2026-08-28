@@ -64,8 +64,9 @@ export class ExpenseTrendChart {
         position: 'bottom' as const,
         labels: {
           padding: 12,
-          usePointStyle: true,
-          pointStyleWidth: 8,
+          usePointStyle: false,
+          boxWidth: 10,
+          boxHeight: 10,
           font: { size: 11 },
         },
       },

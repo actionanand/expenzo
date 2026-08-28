@@ -1,7 +1,7 @@
 import { Component, ChangeDetectionStrategy, input, computed } from '@angular/core';
-import { CurrencyPipe } from '@angular/common';
 
 import { CycleData } from '../../models/expense.model';
+import { MoneyPipe } from '../../pipes/money.pipe';
 
 interface CategoryTrendItem {
   category: string;
@@ -13,7 +13,7 @@ interface CategoryTrendItem {
 @Component({
   selector: 'app-category-trend',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CurrencyPipe],
+  imports: [MoneyPipe],
   template: `
     <section class="trend-section">
       <h2 class="section-title">Category-wise Spending</h2>
@@ -23,12 +23,8 @@ interface CategoryTrendItem {
             <summary class="trend-header">
               <span class="trend-name">{{ trend.category }}</span>
               <span class="trend-stats">
-                <span class="trend-total">{{
-                  trend.total | currency: 'INR' : 'symbol-narrow' : '1.0-0'
-                }}</span>
-                <span class="trend-avg"
-                  >avg {{ trend.avg | currency: 'INR' : 'symbol-narrow' : '1.0-0' }}/mo</span
-                >
+                <span class="trend-total">{{ trend.total | money }}</span>
+                <span class="trend-avg">avg {{ trend.avg | money }}/mo</span>
               </span>
             </summary>
             <div class="trend-months">
@@ -38,9 +34,7 @@ interface CategoryTrendItem {
                   <div class="trend-bar-wrap">
                     <div class="trend-bar" [style.width.%]="getBarWidth(m.spent, trend)"></div>
                   </div>
-                  <span class="trend-month-amount">{{
-                    m.spent | currency: 'INR' : 'symbol-narrow' : '1.0-0'
-                  }}</span>
+                  <span class="trend-month-amount">{{ m.spent | money }}</span>
                 </div>
               }
             </div>

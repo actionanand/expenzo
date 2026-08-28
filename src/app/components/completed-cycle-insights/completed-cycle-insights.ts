@@ -1,7 +1,8 @@
-import { ChangeDetectionStrategy, Component, computed, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { LucideDynamicIcon } from '@lucide/angular';
 
 import { CategorySummary, CycleData } from '../../models/expense.model';
+import { CurrencyPreferencesService } from '../../services/currency-preferences.service';
 
 const DAY_MS = 86_400_000;
 
@@ -100,6 +101,7 @@ const DAY_MS = 86_400_000;
   styleUrl: './completed-cycle-insights.scss',
 })
 export class CompletedCycleInsights {
+  private readonly currency = inject(CurrencyPreferencesService);
   readonly cycle = input.required<CycleData>();
   readonly previousCycle = input<CycleData | null>(null);
 
@@ -190,11 +192,7 @@ export class CompletedCycleInsights {
   }
 
   protected formatCurrency(value: number): string {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      maximumFractionDigits: 0,
-    }).format(value);
+    return this.currency.format(value);
   }
 
   private dayDifference(from: Date, to: Date): number {

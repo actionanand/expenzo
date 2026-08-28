@@ -64,9 +64,12 @@ export class ThemeEffects {
     const theme = isDark ? 'dark' : 'light';
     document.documentElement.setAttribute('data-theme', theme);
     document.documentElement.style.colorScheme = theme;
-    document
-      .querySelector('meta[name="theme-color"]')
-      ?.setAttribute('content', isDark ? '#0d1b0d' : '#f1f8e9');
+    const background = getComputedStyle(document.documentElement)
+      .getPropertyValue('--color-bg')
+      .trim();
+    if (background) {
+      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', background);
+    }
     window.ExpenzoSystemBars?.setDarkMode(isDark);
   }
 }

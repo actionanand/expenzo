@@ -1,28 +1,24 @@
 import { Component, ChangeDetectionStrategy, input, computed } from '@angular/core';
-import { CurrencyPipe } from '@angular/common';
 
 import { IncomeSource } from '../../models/expense.model';
+import { MoneyPipe } from '../../pipes/money.pipe';
 
 @Component({
   selector: 'app-income-summary',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CurrencyPipe],
+  imports: [MoneyPipe],
   template: `
     <section class="income-section">
       <details class="income-details">
         <summary class="income-header">
           <h2 class="section-title">Income Sources</h2>
-          <span class="income-total">{{
-            totalIncome() | currency: 'INR' : 'symbol-narrow' : '1.0-0'
-          }}</span>
+          <span class="income-total">{{ totalIncome() | money }}</span>
         </summary>
         <div class="income-list">
           @for (source of incomeSources(); track source.name) {
             <div class="income-item">
               <span class="income-name">{{ source.name }}</span>
-              <span class="income-amount">{{
-                source.amount | currency: 'INR' : 'symbol-narrow' : '1.0-0'
-              }}</span>
+              <span class="income-amount">{{ source.amount | money }}</span>
             </div>
           }
         </div>
