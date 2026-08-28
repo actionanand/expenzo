@@ -1,6 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 
 import {
+  COUNTRY_CURRENCY_OPTIONS,
+  DISPLAY_CURRENCY_CODES,
   CurrencyPreferencesService,
   countryOptionForCurrency,
   currencySymbol,
@@ -18,6 +20,18 @@ describe('CurrencyPreferencesService', () => {
     expect(service.countryCode()).toBe('IN');
     expect(service.currencyCode()).toBe('INR');
     expect(service.format(1000)).toContain('₹');
+  });
+
+  it('contains only valid ISO-shaped country and currency codes', () => {
+    expect(COUNTRY_CURRENCY_OPTIONS.every((option) => /^[A-Z]{2}$/.test(option.countryCode))).toBe(
+      true,
+    );
+    expect(DISPLAY_CURRENCY_CODES.every((currencyCode) => /^[A-Z]{3}$/.test(currencyCode))).toBe(
+      true,
+    );
+    expect(
+      COUNTRY_CURRENCY_OPTIONS.find((option) => option.countryCode === 'LB')?.currencyCode,
+    ).toBe('LBP');
   });
 
   it('updates currency when the country changes', () => {

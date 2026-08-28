@@ -19,6 +19,7 @@
 .settings-dialog {
   display: flex;
   width: min(100%, 40rem);
+  height: min(46rem, calc(100dvh - 2rem));
   max-height: min(46rem, calc(100dvh - 2rem));
   flex-direction: column;
   overflow: hidden;
@@ -85,11 +86,17 @@
 }
 
 .settings-body {
-  display: grid;
+  display: flex;
+  flex: 1 1 auto;
   min-height: 0;
+  flex-direction: column;
   gap: 1rem;
   padding: 1rem;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+  scrollbar-gutter: stable;
+  -webkit-overflow-scrolling: touch;
 }
 
 .picker-row {
@@ -106,6 +113,7 @@
 }
 
 .settings-section {
+  flex: 0 0 auto;
   overflow: hidden;
   border: 1px solid var(--color-border);
   border-radius: 8px;
@@ -411,6 +419,7 @@
 
   .settings-dialog {
     width: 100%;
+    height: calc(100dvh - max(0.75rem, env(safe-area-inset-top)));
     max-height: calc(100dvh - max(0.75rem, env(safe-area-inset-top)));
     border-right: 0;
     border-bottom: 0;

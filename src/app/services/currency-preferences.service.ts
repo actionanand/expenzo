@@ -26,7 +26,7 @@ HK:HKD HN:HNL HR:EUR HT:HTG HU:HUF
 ID:IDR IE:EUR IL:ILS IN:INR IQ:IQD IR:IRR IS:ISK IT:EUR
 JM:JMD JO:JOD JP:JPY
 KE:KES KG:KGS KH:KHR KI:AUD KM:KMF KN:XCD KP:KPW KR:KRW KW:KWD KZ:KZT
-LA:LAK LB:LB LC:XCD LI:CHF LK:LKR LR:LRD LS:LSL LT:EUR LU:EUR LV:EUR LY:LYD
+LA:LAK LB:LBP LC:XCD LI:CHF LK:LKR LR:LRD LS:LSL LT:EUR LU:EUR LV:EUR LY:LYD
 MA:MAD MC:EUR MD:MDL ME:EUR MG:MGA MH:USD MK:MKD ML:XOF MM:MMK MN:MNT MR:MRU MT:EUR MU:MUR MV:MVR MW:MWK MX:MXN MY:MYR MZ:MZN
 NA:NAD NE:XOF NG:NGN NI:NIO NL:EUR NO:NOK NP:NPR NR:AUD NZ:NZD
 OM:OMR
@@ -56,6 +56,9 @@ export const COUNTRY_CURRENCY_OPTIONS: readonly CountryCurrencyOption[] =
         currencyCode,
       };
     })
+    .filter(
+      (option) => /^[A-Z]{2}$/.test(option.countryCode) && /^[A-Z]{3}$/.test(option.currencyCode),
+    )
     .sort((left, right) => left.countryName.localeCompare(right.countryName, 'en'));
 
 export const DISPLAY_CURRENCY_CODES: readonly string[] = [
@@ -175,7 +178,11 @@ export function countryOptionForCurrency(
 }
 
 export function currencyLabel(currencyCode: string): string {
-  return currencyNames?.of(currencyCode) ?? currencyCode;
+  try {
+    return currencyNames?.of(currencyCode) ?? currencyCode;
+  } catch {
+    return currencyCode;
+  }
 }
 
 export function currencySymbol(currencyCode: string, countryCode: string): string {
