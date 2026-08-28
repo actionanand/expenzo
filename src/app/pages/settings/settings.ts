@@ -8,6 +8,7 @@ import {
   AppSelectPicker,
 } from '../../components/app-select-picker/app-select-picker';
 import { AppLockService } from '../../services/app-lock.service';
+import { COLOR_THEME_OPTIONS, ColorThemeService } from '../../services/color-theme.service';
 import {
   COUNTRY_CURRENCY_OPTIONS,
   CurrencyPreferencesService,
@@ -39,7 +40,7 @@ import { SecurityService } from '../../services/security.service';
           <div>
             <p>Preferences</p>
             <h1 id="settings-title">Settings</h1>
-            <span>Manage local security and device behavior.</span>
+            <span>Manage appearance, currency, and local security.</span>
           </div>
           <a routerLink="/" class="close-button" aria-label="Close settings">
             <svg lucideIcon="x" aria-hidden="true"></svg>
@@ -47,6 +48,34 @@ import { SecurityService } from '../../services/security.service';
         </header>
 
         <div class="settings-body">
+          <section class="settings-section" aria-labelledby="appearance-title">
+            <header>
+              <span class="section-icon" aria-hidden="true">
+                <svg lucideIcon="palette"></svg>
+              </span>
+              <div>
+                <h2 id="appearance-title">Appearance</h2>
+                <p>Choose an accent palette for both light and dark mode.</p>
+              </div>
+            </header>
+
+            <div class="setting-rows">
+              <div class="setting-row picker-row">
+                <span>
+                  <strong>Color theme</strong>
+                  <small>Light, dark, and automatic mode remain available in the top bar</small>
+                </span>
+                <app-select-picker
+                  label="Color theme"
+                  sheetTitle="Choose color theme"
+                  [options]="colorThemeOptions"
+                  [value]="colorTheme.theme()"
+                  (valueChange)="changeColorTheme($event)"
+                />
+              </div>
+            </div>
+          </section>
+
           <section class="settings-section" aria-labelledby="currency-title">
             <header>
               <span class="section-icon" aria-hidden="true">
@@ -283,6 +312,7 @@ export class Settings {
   protected readonly settings = inject(SecuritySettingsService);
   protected readonly security = inject(SecurityService);
   protected readonly lock = inject(AppLockService);
+  protected readonly colorTheme = inject(ColorThemeService);
   protected readonly currency = inject(CurrencyPreferencesService);
   private readonly formBuilder = inject(FormBuilder);
 
@@ -291,6 +321,14 @@ export class Settings {
   protected readonly formError = signal('');
   protected readonly savingPin = signal(false);
   protected readonly message = signal('');
+  protected readonly colorThemeOptions: readonly AppSelectOption[] = COLOR_THEME_OPTIONS.map(
+    (option) => ({
+      value: option.id,
+      label: option.label,
+      detail: option.description,
+      swatch: option.swatch,
+    }),
+  );
   protected readonly countryOptions: readonly AppSelectOption[] = COUNTRY_CURRENCY_OPTIONS.map(
     (option) => ({
       value: option.countryCode,
@@ -414,6 +452,12 @@ export class Settings {
   protected changeCountry(countryCode: string): void {
     this.currency.setCountry(countryCode);
     this.showMessage(`Display changed to ${currencyLabel(this.currency.currencyCode())}.`);
+  }
+
+  protected changeColorTheme(theme: string): void {
+    this.colorTheme.set(theme);
+    const selected = COLOR_THEME_OPTIONS.find((option) => option.id === this.colorTheme.theme());
+    this.showMessage(`${selected?.label ?? 'Color theme'} applied.`);
   }
 
   protected changeCurrency(currencyCode: string): void {

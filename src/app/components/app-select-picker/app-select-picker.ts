@@ -20,6 +20,7 @@ export interface AppSelectOption {
   readonly detail?: string;
   readonly disabled?: boolean;
   readonly icon?: string;
+  readonly swatch?: string;
 }
 
 @Component({
@@ -46,6 +47,9 @@ export interface AppSelectOption {
     >
       @if (selectedOption()?.icon; as icon) {
         <svg class="leading-icon" [lucideIcon]="icon" aria-hidden="true"></svg>
+      }
+      @if (selectedOption()?.swatch; as swatch) {
+        <span class="option-swatch compact-swatch" [style.background-color]="swatch"></span>
       }
       <span class="selected-label">{{ selectedLabel() }}</span>
       <svg class="chevron" lucideIcon="chevron-down" aria-hidden="true"></svg>
@@ -104,6 +108,9 @@ export interface AppSelectOption {
               >
                 @if (option.icon) {
                   <svg class="option-icon" [lucideIcon]="option.icon" aria-hidden="true"></svg>
+                }
+                @if (option.swatch) {
+                  <span class="option-swatch" [style.background-color]="option.swatch"></span>
                 }
                 <span class="option-copy">
                   <strong>{{ option.label }}</strong>

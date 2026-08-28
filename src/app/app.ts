@@ -8,6 +8,7 @@ import { CacheService } from './services/cache.service';
 import { AppLock } from './components/app-lock/app-lock';
 import { AppLockService } from './services/app-lock.service';
 import { MobileNavigation } from './components/mobile-navigation/mobile-navigation';
+import { ColorThemeService } from './services/color-theme.service';
 
 @Component({
   selector: 'app-root',
@@ -24,8 +25,10 @@ export class App implements OnInit {
   private readonly store = inject(Store);
   protected readonly cache = inject(CacheService);
   protected readonly lock = inject(AppLockService);
+  private readonly colorTheme = inject(ColorThemeService);
 
   ngOnInit(): void {
+    this.colorTheme.initialize();
     this.store.dispatch(initTheme());
   }
 

@@ -10,14 +10,34 @@
     <script>
       (function () {
         var t = localStorage.getItem('expenzo-theme');
+        var c = localStorage.getItem('expenzo-color-theme');
+        var colors = ['forest', 'rose', 'ocean', 'violet', 'teal', 'amber'];
+        var colorTheme = colors.indexOf(c) >= 0 ? c : 'forest';
         var isDark =
           t === 'dark' ||
           (t !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
         document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+        document.documentElement.setAttribute('data-color-theme', colorTheme);
         document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';
+        var lightBackgrounds = {
+          forest: '#f1f8e9',
+          rose: '#fff7fa',
+          ocean: '#f5f9ff',
+          violet: '#fcf8ff',
+          teal: '#f4fbfa',
+          amber: '#fffbf2',
+        };
+        var darkBackgrounds = {
+          forest: '#0d1b0d',
+          rose: '#170d11',
+          ocean: '#0b151f',
+          violet: '#150f18',
+          teal: '#0a1715',
+          amber: '#17130c',
+        };
         document
           .querySelector('meta[name="theme-color"]')
-          .setAttribute('content', isDark ? '#0d1b0d' : '#f1f8e9');
+          .setAttribute('content', (isDark ? darkBackgrounds : lightBackgrounds)[colorTheme]);
       })();
     </script>
   </head>
